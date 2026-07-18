@@ -612,7 +612,7 @@ async function start() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  app.listen(PORT, () => {
     console.log(`[ria-iqram-wedding] Server safely active on http://0.0.0.0:${PORT}`);
   });
 }
