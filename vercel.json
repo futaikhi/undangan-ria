@@ -26,5 +26,12 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.ts"
+    },
+    { "source": "/((?!api/|assets/).*)", "destination": "/index.html" }
   ]
 }
