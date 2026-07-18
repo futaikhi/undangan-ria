@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-display: "Cinzel", "Playfair Display", serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-batik-brown: #8c6239;
+  --color-gold-gentle: #d4af37;
+  --color-gold-shine: #e6c65e;
+  --color-wedding-cream: #fbf9f4;
+  --color-dark-wood: #1e1105;
+}
+
+/* Custom background animations and textures */
+.bg-paper-texture {
+  background-color: var(--color-wedding-cream);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='paper-grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04' numOctaves='3' result='noise'/%3E%3CfeDiffuseLighting in='noise' lighting-color='%23fbf9f4' surfaceScale='2'%3E%3CfeDistantLight azimuth='45' elevation='60'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23paper-grain)' opacity='0.08'/%3E%3C/svg%3E");
+}
+
+/* SVG Javanese Batik Kawung Pattern */
+.bg-batik-kawung {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='%238c6239' fill-opacity='0.025'%3E%3Cpath d='M40 0 C18 0 0 18 0 40 C0 62 18 80 40 80 C62 80 80 62 80 40 C80 18 62 0 40 0 Z M40 8 C53.6 8 64.9 16.3 69.5 28.1 C63.6 20.3 52.6 15 40 15 C27.4 15 16.4 20.3 10.5 28.1 C15.1 16.3 26.4 8 40 8 Z M40 72 C26.4 72 15.1 63.7 10.5 51.9 C16.4 59.7 27.4 65 40 65 C52.6 65 63.6 59.7 69.5 51.9 C64.9 63.7 53.6 72 40 72 Z M8 40 C8 26.4 16.3 15.1 28.1 10.5 C20.3 16.4 15 27.4 15 40 C15 52.6 20.3 63.6 28.1 69.5 C16.3 64.9 8 53.6 8 40 Z M72 40 C72 53.6 63.7 64.9 51.9 69.5 C59.7 63.6 65 52.6 65 40 C65 27.4 59.7 16.4 51.9 10.5 C63.7 15.1 72 26.4 72 40 Z'/%3E%3Ccircle cx='40' cy='40' r='5'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Luxury Metallic gold text shine */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #b38728 0%, #fbf5b7 25%, #daac3a 50%, #fbf5b7 75%, #aa771c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Golden Border Gradient */
+.border-gold-gradient {
+  border-image: linear-gradient(to right, #b38728, #fbf5b7, #daac3a, #b38728) 1;
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+  50% { transform: translateY(-15px) rotate(5deg); opacity: 0.7; }
+}
+
+.animate-float-slow {
+  animation: float 8s ease-in-out infinite;
+}
+
+.animate-float-medium {
+  animation: float 5s ease-in-out infinite 1s;
+}
+
+.animate-float-fast {
+  animation: float 3s ease-in-out infinite 2s;
+}
+
+/* Styled Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1a1005;
+}
+::-webkit-scrollbar-thumb {
+  background: #8c6239;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #e6c65e;
+}

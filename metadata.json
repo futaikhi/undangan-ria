@@ -1,0 +1,6 @@
+{
+  "name": "Ria & Iqram Wedding Invitation",
+  "description": "Premium cinematic modern Javanese wedding digital invitation for Ria & Iqram",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
