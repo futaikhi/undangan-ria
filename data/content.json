@@ -1,0 +1,105 @@
+{
+  "bride": {
+    "nickname": "Ria",
+    "fullname": "Ria Lestari, S.Kom.",
+    "father": "Bapak Ir. H. Bambang Susilo",
+    "mother": "Ibu Hj. Sri Rahayu",
+    "photo": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80&w=600",
+    "instagram": "@ria.lestari"
+  },
+  "groom": {
+    "nickname": "Iqram",
+    "fullname": "Muhammad Iqram, M.B.A.",
+    "father": "Bapak H. Hardi Pranoto",
+    "mother": "Ibu Hj. Ningsih Purwanti",
+    "photo": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=600",
+    "instagram": "@iqram.pranoto"
+  },
+  "quote": {
+    "text": "“Mila karsaning Hyang Widhi, ingkang saged miyaraken rasaning katresnan satuhu ingkang suci. Mugi tansah pinaringan berkah lan karahayon.”",
+    "translation": "“Atas kehendak Tuhan Yang Maha Esa, yang dapat menumbuhkan rasa cinta suci yang sejati. Semoga selalu mendapatkan berkah dan kesejahteraan.”",
+    "source": "Serat Wedhatama / Filosofi Leluhur Jawa"
+  },
+  "events": {
+    "akad": {
+      "title": "Akad Nikah",
+      "date": "Sabtu, 12 September 2026",
+      "isoDate": "2026-09-12T08:00:00+07:00",
+      "time": "08:00 - 10:00 WIB",
+      "location": "Pendopo Agung Royal Ambarrukmo",
+      "address": "Jl. Laksda Adisucipto No.81, Ambarukmo, Caturtunggal, Kec. Depok, Sleman, D.I. Yogyakarta",
+      "mapsUrl": "https://maps.app.goo.gl/uP63sVGrAL9p5E2o8"
+    },
+    "resepsi": {
+      "title": "Resepsi Pernikahan",
+      "date": "Sabtu, 12 September 2026",
+      "isoDate": "2026-09-12T11:00:00+07:00",
+      "time": "11:00 - 14:00 WIB",
+      "location": "Pendopo Agung Royal Ambarrukmo",
+      "address": "Jl. Laksda Adisucipto No.81, Ambarukmo, Caturtunggal, Kec. Depok, Sleman, D.I. Yogyakarta",
+      "mapsUrl": "https://maps.app.goo.gl/uP63sVGrAL9p5E2o8"
+    }
+  },
+  "story": [
+    {
+      "id": 1,
+      "year": "2022",
+      "title": "Pertemuan Pertama (Witing Tresno Jalaran Soko Kulino)",
+      "content": "Kami dipertemukan pertama kali di keraton Yogyakarta dalam sebuah acara pelestarian budaya. Kesamaan kecintaan pada adat istiadat dan seni Jawa mengawali perbincangan hangat kami."
+    },
+    {
+      "id": 2,
+      "year": "2024",
+      "title": "Mengikat Rasa & Visi",
+      "content": "Setelah dua tahun saling mengenal, bertukar pikiran, dan berbagi cerita, kami memantapkan niat untuk menyelaraskan visi hidup bersama menuju ikatan yang direstui oleh Sang Pencipta."
+    },
+    {
+      "id": 3,
+      "year": "2026",
+      "title": "Lamaran & Restu (Januari 2026)",
+      "content": "Di hadapan keluarga besar kedua belah pihak, Iqram secara resmi memohon restu dari orang tua Ria untuk meminang sang putri. Hari suci penuh kebahagiaan pun dipersiapkan."
+    }
+  ],
+  "gifts": [
+    {
+      "provider": "BCA",
+      "accountNumber": "1234567890",
+      "holder": "Ria Lestari",
+      "icon": "CreditCard"
+    },
+    {
+      "provider": "Mandiri",
+      "accountNumber": "9876543210",
+      "holder": "Muhammad Iqram",
+      "icon": "CreditCard"
+    },
+    {
+      "provider": "QRIS Digital Gift",
+      "accountNumber": "qris_placeholder_base64_or_text",
+      "holder": "Ria & Iqram Wedding",
+      "icon": "QrCode"
+    }
+  ],
+  "gallery": [
+    {
+      "id": "g1",
+      "url": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800",
+      "caption": "Kasmaran - Keintiman dalam balutan kebaya tradisional."
+    },
+    {
+      "id": "g2",
+      "url": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80&w=800",
+      "caption": "Langkah Suci - Menyusuri pelataran Pendopo."
+    },
+    {
+      "id": "g3",
+      "url": "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&q=80&w=800",
+      "caption": "Ikatan Jiwa - Tatapan hangat penuh harapan."
+    },
+    {
+      "id": "g4",
+      "url": "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?auto=format&fit=crop&q=80&w=800",
+      "caption": "Selasar - Menanti hari yang sakral bersama."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "musicUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+  "youtubeLiveUrl": "",
+  "theme": {
+    "primaryColor": "#8c6239",
+    "accentColor": "#d4af37",
+    "backgroundColor": "#fcfbf7",
+    "darkColor": "#1a1005"
+  },
+  "generalOptions": {
+    "enableCommentsApproval": false,
+    "enableMusicAutoplay": true,
+    "whatsappGreetingTemplate": "Halo Bapak/Ibu {nama_tamu}\n\nDengan penuh kebahagiaan kami mengundang Anda untuk hadir di acara pernikahan kami:\n\nRia & Iqram\n\nBerikut link undangannya:\n{link_undangan}\n\nMerupakan suatu kehormatan bagi kami apabila Anda berkenan hadir.\n\nTerima kasih."
+  }
+}
