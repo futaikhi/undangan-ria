@@ -612,11 +612,15 @@ async function start() {
     });
   }
 
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`[ria-iqram-wedding] Server safely active on http://0.0.0.0:${PORT}`);
   });
 }
 
-start();
+// Only start the standalone Express server if we are NOT on Vercel
+if (!process.env.VERCEL) {
+  start();
+}
 
 export default app;
+

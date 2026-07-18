@@ -3,7 +3,8 @@ import fs from 'fs';
 import path from 'path';
 
 // Ensure the data directory exists
-const DATA_DIR = path.join(process.cwd(), 'data');
+const isVercel = process.env.VERCEL || process.env.NOW_BUILDER;
+const DATA_DIR = isVercel ? '/tmp' : path.join(process.cwd(), 'data');
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
