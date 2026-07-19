@@ -797,7 +797,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                                       {/* Delete */}
                                       <button
                                         onClick={() => handleDeleteGuest(g.id, g.name)}
-                                        className="p-1 text-red-500 hover:text-red-300"
+                                        className="p-1 text-red-500 hover:text-red-300 cursor-pointer"
                                         title="Hapus"
                                       >
                                         <Trash2 size={12} />

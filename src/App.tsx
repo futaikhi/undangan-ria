@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Lock, Heart, RefreshCw, KeyRound, ArrowLeft, ShieldAlert } from 'lucide-react';
+import { Lock, KeyRound, ArrowLeft, ShieldAlert } from 'lucide-react';
 import { OpeningScreen } from './components/OpeningScreen';
-import { InvitationMain } from './components/InvitationMain';
 import { AdminPanel } from './components/AdminPanel';
 import { GamelanAudio } from './components/GamelanAudio';
+import { RSVP } from './components/RSVP';
 import { Guest, Comment, Content, Settings } from './types';
 import { JavaneseGunungan } from './components/BatikOrnament';
 
@@ -211,7 +211,7 @@ export default function App() {
   // LOADING SHIM STATE SCREEN
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-stone-950 text-wedding-cream bg-batik-kawung flex flex-col justify-center items-center p-6 text-center">
+      <div className="min-h-screen min-h-dvh bg-stone-950 text-wedding-cream bg-batik-kawung flex flex-col justify-center items-center p-6 text-center">
         <JavaneseGunungan size={100} className="text-gold-gentle opacity-50 mb-6 animate-pulse" />
         <h3 className="font-serif text-lg text-white font-bold tracking-wide">Amemuji Sugeng Rawuh</h3>
         <p className="text-stone-400 text-xs font-mono tracking-widest uppercase mt-2">Memuat Undangan Ria & Iqram...</p>
@@ -235,7 +235,7 @@ export default function App() {
     if (!adminAuthenticated) {
       // Show elegant admin lock screen
       return (
-        <div className="min-h-screen bg-stone-950 text-wedding-cream bg-batik-kawung flex flex-col justify-center items-center p-6">
+        <div className="min-h-screen min-h-dvh bg-stone-950 text-wedding-cream bg-batik-kawung flex flex-col justify-center items-center p-6">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -345,7 +345,7 @@ export default function App() {
 
             {/* Main scroll elements */}
             {content && settings && (
-              <InvitationMain
+              <RSVP
                 guest={guest}
                 comments={comments}
                 content={content}
@@ -361,7 +361,7 @@ export default function App() {
       {settings && (
         <GamelanAudio
           url={settings.musicUrl}
-          autoplay={settings.generalOptions.enableMusicAutoplay}
+          autoplay={false}
         />
       )}
     </>

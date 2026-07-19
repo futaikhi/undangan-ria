@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Mail, Calendar } from 'lucide-react';
 import { JavaneseGunungan, CornerOrnament } from './BatikOrnament';
@@ -10,8 +10,21 @@ interface OpeningScreenProps {
 }
 
 export const OpeningScreen: React.FC<OpeningScreenProps> = ({ guestName, guestCategory, onOpen }) => {
+  useEffect(() => {
+    const setAppHeight = () => {
+      const doc = document.documentElement;
+      doc.style.setProperty('--app-height', `${window.innerHeight}px`);
+    };
+
+    setAppHeight();
+    window.addEventListener('resize', setAppHeight);
+
+    return () => {
+      window.removeEventListener('resize', setAppHeight);
+    };
+  }, []);
   return (
-    <div className="relative min-h-screen flex flex-col justify-between overflow-hidden bg-dark-wood text-wedding-cream bg-batik-kawung p-6 z-[9990]">
+    <div className="relative h-[var(--app-height)] flex flex-col justify-between overflow-hidden bg-dark-wood text-wedding-cream bg-batik-kawung p-6 z-[9990]">
       {/* Absolute Corners Decoration */}
       <CornerOrnament className="absolute top-4 left-4 text-gold-gentle opacity-60" />
       <CornerOrnament className="absolute top-4 right-4 text-gold-gentle opacity-60" flippedX />
