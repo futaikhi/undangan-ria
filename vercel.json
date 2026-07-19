@@ -33,5 +33,6 @@
       "destination": "/api/index.ts"
     },
     { "source": "/((?!api/|assets/).*)", "destination": "/index.html" }
-  ]
+  ],
+  "outputDirectory": "public"
 }
