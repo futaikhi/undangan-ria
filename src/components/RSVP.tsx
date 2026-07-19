@@ -107,7 +107,7 @@ export const RSVP: React.FC<RSVPProps> = ({
 										<div className="flex-grow">
 											<p className="text-[10px] text-stone-400 uppercase tracking-widest">Tamu Undangan Terhormat</p>
 											<p className="text-sm font-semibold font-serif text-white">{guest.name}</p>
-											{guest.category && <p className="text-[9px] text-[#cfaf88] uppercase font-mono mt-0.5">Kategori: {guest.category}</p>}
+											{guest.category && <p className="text-[9px] text-[#000000] uppercase font-mono mt-0.5">Kategori: {guest.category}</p>}
 										</div>
 									</div>
 								)}
@@ -135,7 +135,7 @@ export const RSVP: React.FC<RSVPProps> = ({
 
 									{/* Attendance Toggle */}
 									<div className="mb-6">
-										<label className="block text-xs uppercase tracking-widest text-stone-300 font-bold mb-3">
+										<label className="block text-xs uppercase tracking-widest text-stone-400 font-bold mb-3">
 											Konfirmasi Kehadiran
 										</label>
 										<div className="grid grid-cols-2 gap-3">
@@ -166,7 +166,7 @@ export const RSVP: React.FC<RSVPProps> = ({
 
 									{/* Name Input field */}
 									<div className="mb-6">
-										<label className="block text-xs uppercase tracking-widest text-stone-300 font-bold mb-2">
+										<label className="block text-xs uppercase tracking-widest text-stone-400 font-bold mb-2">
 											Nama Anda
 										</label>
 										<input
@@ -189,7 +189,7 @@ export const RSVP: React.FC<RSVPProps> = ({
 												exit={{ opacity: 0, height: 0 }}
 												className="mb-6 overflow-hidden"
 											>
-												<label className="block text-xs uppercase tracking-widest text-stone-300 font-bold mb-2">
+												<label className="block text-xs uppercase tracking-widest text-stone-400 font-bold mb-2">
 													Jumlah Tamu Hadir
 												</label>
 												<div className="flex items-center gap-3">
@@ -199,8 +199,8 @@ export const RSVP: React.FC<RSVPProps> = ({
 															type="button"
 															onClick={() => setRsvpCount(num)}
 															className={`w-12 h-12 rounded-xl text-xs font-semibold font-mono border transition-all cursor-pointer flex items-center justify-center ${rsvpCount === num
-																? 'bg-gold-gentle border-gold-shine text-black shadow-lg font-bold'
-																: 'bg-stone-850 border-stone-800 text-stone-300 hover:border-stone-700'
+																? 'bg-gold-gentle border-gold-shine text-stone-400 shadow-lg font-bold'
+																: 'bg-stone-850 border-stone-800 text-stone-400 hover:border-stone-700'
 																}`}
 															id={`rsvp-count-${num}`}
 														>
@@ -214,7 +214,7 @@ export const RSVP: React.FC<RSVPProps> = ({
 
 									{/* Comment Message (Ucapanku) */}
 									<div className="mb-6">
-										<label className="block text-xs uppercase tracking-widest text-stone-300 font-bold mb-2">
+										<label className="block text-xs uppercase tracking-widest text-stone-400 font-bold mb-2">
 											Pesan / Ucapan (Buku Tamu)
 										</label>
 										<textarea

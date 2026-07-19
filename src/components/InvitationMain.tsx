@@ -62,7 +62,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
   };
 
   return (
-    <div className="relative min-h-screen bg-paper-texture bg-batik-kawung text-stone-800 overflow-hidden">    
+    <div className="relative min-h-screen bg-paper-texture text-stone-800 overflow-hidden">    
       {/* 1. HERO SECTION */}
       <section className="relative min-h-screen flex flex-col justify-center items-center px-4 py-16 text-center text-wedding-cream bg-dark-wood relative">
         <div className="absolute inset-0 bg-black/60 z-0"></div>
@@ -86,7 +86,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
             <BatikMandala size={110} className="text-gold-gentle opacity-80 mb-6" />
           </motion.div>
 
-          <span className="text-[10px] tracking-widest uppercase text-stone-300 font-mono mb-2">WALIMATUL 'URSY</span>
+          <span className="text-[10px] tracking-widest uppercase text-black font-mono mb-2">WALIMATUL 'URSY</span>
           <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-semibold text-gold-gradient tracking-wider mt-2 mb-4">
             Ria & Iqram
           </h1>
@@ -121,7 +121,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
                 <span className="font-mono text-xl sm:text-2xl md:text-3xl font-bold text-gold-shine">
                   {col.val.toString().padStart(2, '0')}
                 </span>
-                <span className="text-[10px] text-stone-400 uppercase tracking-widest mt-1 font-serif">
+                <span className="text-[10px] text-black uppercase tracking-widest mt-1 font-serif">
                   {col.label}
                 </span>
               </motion.div>
@@ -260,8 +260,6 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
               transition={{ duration: 0.8 }}
               className="bg-white border-2 border-double border-gold-gentle/40 rounded-3xl p-8 sm:p-10 shadow-xl flex flex-col justify-between hover:border-gold-gentle transition-colors duration-300 relative overflow-hidden"
             >
-              <div className="absolute top-0 right-0 w-20 h-20 bg-batik-kawung opacity-5 pointer-events-none"></div>
-
               <div>
                 <div className="w-12 h-12 rounded-full bg-amber-50 border border-gold-gentle flex items-center justify-center mx-auto mb-6 shadow">
                   <Sparkles size={20} className="text-gold-gentle" />
@@ -318,8 +316,6 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
               transition={{ duration: 0.8, delay: 0.1 }}
               className="bg-white border-2 border-double border-gold-gentle/40 rounded-3xl p-8 sm:p-10 shadow-xl flex flex-col justify-between hover:border-gold-gentle transition-colors duration-300 relative overflow-hidden"
             >
-              <div className="absolute top-0 right-0 w-20 h-20 bg-batik-kawung opacity-5 pointer-events-none"></div>
-
               <div>
                 <div className="w-12 h-12 rounded-full bg-amber-50 border border-gold-gentle flex items-center justify-center mx-auto mb-6 shadow">
                   <Heart size={18} className="text-gold-gentle fill-current text-gold-gentle animate-pulse" />
@@ -465,9 +461,6 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
                 viewport={{ once: true }}
                 className="bg-stone-900 text-wedding-cream rounded-3xl p-6 sm:p-8 shadow-2xl border border-gold-gentle/20 relative overflow-hidden text-left"
               >
-                {/* Visual texture patterns inside cashless bank templates */}
-                <div className="absolute top-0 right-0 w-24 h-24 bg-batik-kawung opacity-5 pointer-events-none"></div>
-                
                 <h4 className="font-mono text-lg font-bold text-gold-shine tracking-wider mb-6">
                   {bank.provider.toUpperCase()}
                 </h4>
@@ -508,7 +501,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
           {/* Comments Scroller Container */}
           <div className="mt-16 max-w-2xl mx-auto space-y-6 max-h-[500px] overflow-y-auto px-2 py-4 border border-stone-200/50 rounded-2xl bg-stone-50/50 shadow-inner">
             {comments.length === 0 ? (
-              <div className="py-12 text-stone-400 font-sans text-xs">
+              <div className="py-12 text-black font-sans text-xs">
                 Belum ada ucapan doa. Jadilah yang pertama memberikan restu indah!
               </div>
             ) : (
@@ -520,7 +513,6 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
                   className="bg-white border border-stone-150 rounded-2xl p-5 text-left shadow-sm relative overflow-hidden"
                 >
                   {/* Small decorative ornament in the corner of comment boxes */}
-                  <div className="absolute top-0 right-0 w-8 h-8 bg-batik-kawung opacity-[0.03] pointer-events-none"></div>
 
                   <div className="flex items-center justify-between mb-3">
                     <h5 className="font-serif font-bold text-batik-brown text-sm flex items-center gap-1.5">
@@ -528,7 +520,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
                       <span>{comment.name}</span>
                     </h5>
                     
-                    <span className="text-[9px] font-mono text-stone-400">
+                    <span className="text-[9px] font-mono text-black">
                       {new Date(comment.created_at).toLocaleDateString('id-ID', {
                         day: 'numeric',
                         month: 'short',
@@ -551,7 +543,6 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
 
       {/* 9. PREMIUM FOOTER */}
       <footer className="bg-stone-900 text-wedding-cream py-20 px-4 text-center border-t border-stone-850 relative">
-        <div className="absolute top-0 inset-x-0 h-4 bg-batik-kawung opacity-5 pointer-events-none"></div>
 
         <div className="max-w-xl mx-auto flex flex-col items-center">
           <BatikMandala size={80} className="text-gold-gentle/60 mb-6" />
@@ -565,7 +556,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
             “Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu kepada kedua mempelai.”
           </p>
 
-          <p className="text-xs text-stone-300 font-serif font-bold">Wassalamu’alaikum Warahmatullahi Wabarakatuh</p>
+          <p className="text-xs text-stone-400 font-serif font-bold">Wassalamu’alaikum Warahmatullahi Wabarakatuh</p>
 
           <div className="h-[2px] w-20 bg-gold-gentle/40 my-8"></div>
           
@@ -588,7 +579,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
           >
             <button
               onClick={() => setSelectedPhoto(null)}
-              className="absolute top-6 right-6 text-stone-400 hover:text-white text-3xl font-sans font-semibold cursor-pointer"
+              className="absolute top-6 right-6 text-black hover:text-white text-3xl font-sans font-semibold cursor-pointer"
             >
               ×
             </button>
@@ -601,7 +592,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
               className="max-w-full max-h-[80vh] object-contain rounded-xl select-none"
               referrerPolicy="no-referrer"
             />
-            <p className="text-xs text-stone-400 italic text-center mt-4">Ketuk di mana saja untuk menutup kembali</p>
+            <p className="text-xs text-black italic text-center mt-4">Ketuk di mana saja untuk menutup kembali</p>
           </motion.div>
         )}
       </AnimatePresence>

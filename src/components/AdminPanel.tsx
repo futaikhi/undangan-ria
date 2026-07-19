@@ -386,7 +386,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
 
         <button
           onClick={onLogout}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-stone-800 text-xs text-stone-400 hover:text-white hover:bg-stone-800 cursor-pointer transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-stone-800 text-xs text-black hover:text-white hover:bg-stone-800 cursor-pointer transition-colors"
         >
           <LogOut size={13} />
           <span className="hidden sm:inline">Keluar</span>
@@ -407,7 +407,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         {stats && (
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
             <div className="bg-stone-900 border border-stone-800 p-4 rounded-2xl">
-              <div className="flex items-center gap-2 text-stone-400 text-xs uppercase tracking-widest font-mono">
+              <div className="flex items-center gap-2 text-black text-xs uppercase tracking-widest font-mono">
                 <Users size={12} className="text-blue-400" />
                 <span>Total Tamu</span>
               </div>
@@ -416,7 +416,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
             </div>
 
             <div className="bg-stone-900 border border-stone-800 p-4 rounded-2xl">
-              <div className="flex items-center gap-2 text-stone-400 text-xs uppercase tracking-widest font-mono">
+              <div className="flex items-center gap-2 text-black text-xs uppercase tracking-widest font-mono">
                 <Eye size={12} className="text-emerald-400" />
                 <span>Total Baca</span>
               </div>
@@ -425,19 +425,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
             </div>
 
             <div className="bg-stone-900 border border-stone-800 p-4 rounded-2xl">
-              <div className="flex items-center gap-2 text-stone-400 text-xs uppercase tracking-widest font-mono">
+              <div className="flex items-center gap-2 text-black text-xs uppercase tracking-widest font-mono">
                 <CheckCircle size={12} className="text-green-400" />
                 <span>Sanggup Hadir</span>
               </div>
               <div className="flex items-baseline gap-2 mt-2 mb-1">
                 <p className="text-2xl font-bold font-mono text-white">{stats.countHadir}</p>
-                <span className="text-[10px] text-stone-400">({stats.totalHadirTamu} Pax)</span>
+                <span className="text-[10px] text-black">({stats.totalHadirTamu} Pax)</span>
               </div>
               <span className="text-[9px] text-stone-500">Telah konfirmasi datang</span>
             </div>
 
             <div className="bg-stone-900 border border-stone-800 p-4 rounded-2xl">
-              <div className="flex items-center gap-2 text-stone-400 text-xs uppercase tracking-widest font-mono">
+              <div className="flex items-center gap-2 text-black text-xs uppercase tracking-widest font-mono">
                 <XCircle size={12} className="text-red-400" />
                 <span>Absen</span>
               </div>
@@ -446,7 +446,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
             </div>
 
             <div className="bg-stone-900 border border-stone-800 p-4 rounded-2xl col-span-2 lg:col-span-1">
-              <div className="flex items-center gap-2 text-stone-400 text-xs uppercase tracking-widest font-mono">
+              <div className="flex items-center gap-2 text-black text-xs uppercase tracking-widest font-mono">
                 <MessageSquare size={12} className="text-yellow-400" />
                 <span>Ucapan</span>
               </div>
@@ -472,7 +472,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                 className={`flex items-center gap-2 px-5 py-3 text-xs uppercase tracking-widest font-semibold cursor-pointer border-b-2 whitespace-nowrap transition-colors ${
                   activeTab === tab.id
                     ? 'border-gold-gentle text-gold-shine bg-stone-900'
-                    : 'border-transparent text-stone-400 hover:text-white hover:bg-stone-900'
+                    : 'border-transparent text-black hover:text-white hover:bg-stone-900'
                 }`}
               >
                 <Icon size={13} />
@@ -500,7 +500,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
 
                 <form onSubmit={handleCreateGuest} className="space-y-4 text-xs">
                   <div>
-                    <label className="block text-stone-400 mb-1">Nama Tamu</label>
+                    <label className="block text-black mb-1">Nama Tamu</label>
                     <input
                       type="text"
                       required
@@ -513,7 +513,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-stone-400 mb-1">Kategori</label>
+                      <label className="block text-black mb-1">Kategori</label>
                       <select
                         value={newGuest.category}
                         onChange={(e) => setNewGuest({ ...newGuest, category: e.target.value })}
@@ -527,7 +527,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                     </div>
 
                     <div>
-                      <label className="block text-stone-400 mb-1">WhatsApp (62...)</label>
+                      <label className="block text-black mb-1">WhatsApp (62...)</label>
                       <input
                         type="tel"
                         placeholder="6281234..."
@@ -600,7 +600,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
 
                     <button
                       onClick={downloadGuestsCSV}
-                      className="px-3 py-2 bg-stone-950 border border-stone-850 rounded-lg text-stone-300 hover:text-gold-shine text-[11px] flex items-center gap-1 font-mono cursor-pointer"
+                      className="px-3 py-2 bg-stone-950 border border-stone-850 rounded-lg text-black hover:text-gold-shine text-[11px] flex items-center gap-1 font-mono cursor-pointer"
                       title="Unduh file Excel/CSV"
                     >
                       <FileText size={12} />
@@ -611,9 +611,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
 
                 {/* Table View */}
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-stone-400">
+                  <table className="w-full text-left text-xs text-black">
                     <thead>
-                      <tr className="border-b border-stone-800 text-stone-300 uppercase tracking-wider font-mono text-[10px]">
+                      <tr className="border-b border-stone-800 text-black uppercase tracking-wider font-mono text-[10px]">
                         <th className="py-3 px-2">Tamu & Kategori</th>
                         <th className="py-3 px-2">Kode / Link Undangan</th>
                         <th className="py-3 px-2">Rawuh? (Pax)</th>
@@ -673,7 +673,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                                         setCopiedId(g.id);
                                         setTimeout(() => setCopiedId(null), 1500);
                                       }}
-                                      className="text-[#cfaf88] hover:text-white"
+                                      className="text-[#000000] hover:text-white"
                                       title="Copy Link Undangan"
                                     >
                                       {copiedId === g.id ? <Check size={11} className="text-green-500" /> : <Copy size={11} />}
@@ -716,7 +716,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                                     <span className={`inline-block px-2 py-0.5 rounded text-[9px] font-semibold ${
                                       g.status === 'hadir' ? 'bg-green-950 text-green-300' :
                                       g.status === 'tidak_hadir' ? 'bg-red-950 text-red-300' :
-                                      'bg-stone-800 text-stone-400'
+                                      'bg-stone-800 text-black'
                                     }`}>
                                       {g.status === 'hadir' ? 'Hadir' : g.status === 'tidak_hadir' ? 'Absen' : 'Menunggu'}
                                     </span>
@@ -744,7 +744,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                                       </button>
                                       <button
                                         onClick={() => { setEditingGuestId(null); setEditGuestForm({}); }}
-                                        className="text-stone-400 hover:text-stone-300 px-2 py-1 bg-stone-800 rounded border border-stone-750"
+                                        className="text-black hover:text-black px-2 py-1 bg-stone-800 rounded border border-stone-750"
                                       >
                                         Batal
                                       </button>
@@ -770,7 +770,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                                       {/* WA Message layout text only copier */}
                                       <button
                                         onClick={() => handleCopyWaMessage(g)}
-                                        className="p-1 px-2 bg-stone-950 text-stone-300 hover:bg-stone-800 border border-stone-850 rounded"
+                                        className="p-1 px-2 bg-stone-950 text-black hover:bg-stone-800 border border-stone-850 rounded"
                                         title="Copy Template Pesan"
                                       >
                                         {copiedWaId === g.id ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
@@ -828,7 +828,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                 <h3 className="text-xs uppercase font-mono tracking-widest text-gold-gentle font-bold mb-3">
                   Edit Template Pesan WhatsApp Undangan
                 </h3>
-                <p className="text-xs text-stone-400 mb-4 font-sans leading-normal">
+                <p className="text-xs text-black mb-4 font-sans leading-normal">
                   Pesan di bawah ini adalah acuan isi undangan otomatis yang dikirim ke gawai tamu. 
                   Anda dapat menyertakan penanda <span className="text-gold-gentle font-bold font-mono">{`{nama_tamu}`}</span> dan <span className="text-gold-gentle font-bold font-mono">{`{link_undangan}`}</span> yang akan digantikan secara otomatis oleh mesin.
                 </p>
@@ -862,16 +862,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                 <div className="bg-stone-900 border border-stone-800 rounded-3xl p-6 md:p-8 max-w-xl w-full text-left relative shadow-2xl">
                   <button
                     onClick={() => setShowBulkModal(false)}
-                    className="absolute top-4 right-4 text-stone-400 hover:text-white font-bold text-2xl cursor-pointer"
+                    className="absolute top-4 right-4 text-black hover:text-white font-bold text-2xl cursor-pointer"
                   >
                     ×
                   </button>
 
                   <h3 className="font-serif text-lg font-bold text-gold-gentle tracking-wide mb-2">Impor Banyak Tamu Sekaligus</h3>
-                  <p className="text-xs text-stone-400 font-sans leading-normal mb-6">
+                  <p className="text-xs text-black font-sans leading-normal mb-6">
                     Tuliskan atau tempel nama tamu secara terstruktur, maksimal satu baris per orang. Anda bisa memisahkan nama, kategori, dan nomor HP memakai koma (,) atau titik-koma (;).
                     <br />
-                    <span className="text-stone-300 font-semibold font-mono block mt-1.5 p-2 bg-stone-950 rounded text-[11px]">
+                    <span className="text-black font-semibold font-mono block mt-1.5 p-2 bg-stone-950 rounded text-[11px]">
                       Format baris: Nama Tamu, Kategori (Opsional), WhatsApp (Opsional)
                     </span>
                     <br />
@@ -885,7 +885,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
 
                   <form onSubmit={handleBulkImport} className="space-y-4">
                     <div>
-                      <label className="block text-xs uppercase tracking-widest text-stone-300 mb-1">Kategori Default (Jika baris tidak menyebutkan)</label>
+                      <label className="block text-xs uppercase tracking-widest text-black mb-1">Kategori Default (Jika baris tidak menyebutkan)</label>
                       <select
                         value={bulkCategory}
                         onChange={(e) => setFilterCategory(e.target.value)}
@@ -899,7 +899,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                     </div>
 
                     <div>
-                      <label className="block text-xs uppercase tracking-widest text-stone-300 mb-1">Daftar Baris Tamu</label>
+                      <label className="block text-xs uppercase tracking-widest text-black mb-1">Daftar Baris Tamu</label>
                       <textarea
                         required
                         rows={8}
@@ -914,7 +914,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                       <button
                         type="button"
                         onClick={() => setShowBulkModal(false)}
-                        className="px-4 py-2 border border-stone-800 rounded-lg text-xs text-stone-400 hover:text-white"
+                        className="px-4 py-2 border border-stone-800 rounded-lg text-xs text-black hover:text-white"
                       >
                         Kembali
                       </button>
@@ -938,7 +938,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         {activeTab === 'content' && (
           <div className="bg-stone-900 border border-stone-800 rounded-2xl p-6 shadow">
             <h3 className="font-serif text-lg font-bold text-gold-gentle tracking-wide mb-2">Edit Konten Halaman Web Pernikahan</h3>
-            <p className="text-xs text-stone-400 mb-6 font-sans leading-normal">
+            <p className="text-xs text-black mb-6 font-sans leading-normal">
               Acuan di bawah ini adalah manifest utama (JSON) yang berisikan rincian nama pengantin, quotes adat, data kado rekening bank, rundown acara, hingga gambar prewedding di galeri. Modifikasi data di dalam blok valid JSON di bawah ini, lalu klik Simpan.
             </p>
 
@@ -964,7 +964,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                     setTimeout(() => setSaveStatus(null), 1500);
                   }
                 }}
-                className="px-4 py-2 border border-stone-800 rounded-lg text-xs text-stone-400 hover:text-white cursor-pointer"
+                className="px-4 py-2 border border-stone-800 rounded-lg text-xs text-black hover:text-white cursor-pointer"
               >
                 Reset Perubahan
               </button>
@@ -982,14 +982,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         {activeTab === 'comments' && (
           <div className="bg-stone-900 border border-stone-800 rounded-2xl p-6 shadow">
             <h3 className="font-serif text-lg font-bold text-gold-gentle tracking-wide mb-2">Moderasi Buku Tamu (Ucapan Pengunjung)</h3>
-            <p className="text-xs text-stone-400 mb-6 font-sans leading-normal">
+            <p className="text-xs text-black mb-6 font-sans leading-normal">
               Gunakan panel ini untuk mengawasi ucapan doa dan restu yang ditulis oleh para tamu. Anda bebas menyembunyikan tulisan spans/spam atau menghapus komentar secara permanen.
             </p>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left text-stone-400">
+              <table className="w-full text-xs text-left text-black">
                 <thead>
-                  <tr className="border-b border-stone-800 text-stone-300 font-mono uppercase text-[10px]">
+                  <tr className="border-b border-stone-800 text-black font-mono uppercase text-[10px]">
                     <th className="py-3 px-2">Nama Tamu & Code</th>
                     <th className="py-3 px-2">Pesan Ucapan Restu</th>
                     <th className="py-3 px-2 text-center">Status Persetujuan</th>
@@ -1048,7 +1048,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         {activeTab === 'audit' && (
           <div className="bg-stone-900 border border-stone-800 rounded-2xl p-6 shadow">
             <h3 className="font-serif text-lg font-bold text-gold-gentle tracking-wide mb-2">Audit Log Logins & Admin Actions</h3>
-            <p className="text-xs text-stone-400 mb-6 font-sans leading-normal">
+            <p className="text-xs text-black mb-6 font-sans leading-normal">
               Daftar di bawah memantau operasi keamanan sensitif yang teridentifikasi di server, seperti pembuatan/penghapusan tautan tamu, perubahan konten JSON, atau masuk admin.
             </p>
 
@@ -1065,11 +1065,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                       <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${
                         log.action.includes('FAILED') ? 'bg-red-950 text-red-400 border border-red-900' :
                         log.action.includes('SUCCESS') || log.action.includes('CREATED') ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' :
-                        'bg-stone-900 text-stone-300'
+                        'bg-stone-900 text-black'
                       }`}>
                         {log.action}
                       </span>
-                      <p className="text-stone-300 font-sans leading-tight text-xs">{log.details}</p>
+                      <p className="text-black font-sans leading-tight text-xs">{log.details}</p>
                     </div>
                     <span className="text-[10px] text-stone-600 block self-end">
                       {new Date(log.timestamp).toLocaleDateString()}

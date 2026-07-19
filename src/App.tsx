@@ -253,7 +253,7 @@ export default function App() {
 
             <form onSubmit={handleAdminSubmit} className="space-y-4">
               <div className="relative text-left">
-                <label className="block text-[10px] uppercase font-mono tracking-widest text-[#cfaf88] mb-1">
+                <label className="block text-[10px] uppercase font-mono tracking-widest text-[#000000] mb-1">
                   Masukkan Kata Sandi Admin
                 </label>
                 <div className="relative">

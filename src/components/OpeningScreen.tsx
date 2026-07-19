@@ -52,7 +52,7 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ guestName, guestCa
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.5 }}
           transition={{ duration: 2 }}
-          className="text-[10px] tracking-widest text-[#cfaf88] mt-1"
+          className="text-[10px] tracking-widest text-[#000000] mt-1"
         >
           - WALIMATUL 'URSY -
         </motion.p>
@@ -67,7 +67,7 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ guestName, guestCa
           transition={{ duration: 1.8, ease: 'easeOut' }}
           className="text-gold-gentle opacity-80 mb-2"
         >
-          <JavaneseGunungan size={120} />
+          <JavaneseGunungan size={150} />
         </motion.div>
 
         {/* Short invitation preface */}
@@ -75,7 +75,7 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ guestName, guestCa
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.6 }}
           transition={{ delay: 0.4, duration: 1 }}
-          className="text-[10px] tracking-widest uppercase text-stone-300"
+          className="text-[10px] tracking-widest uppercase text-black"
         >
           The Wedding Invitation Of
         </motion.span>
@@ -95,7 +95,7 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ guestName, guestCa
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.7 }}
           transition={{ delay: 1, duration: 1 }}
-          className="flex items-center gap-2 mt-4 text-[11px] font-mono tracking-widest text-stone-300"
+          className="flex items-center gap-2 mt-4 text-[11px] font-mono tracking-widest text-black"
         >
           <Calendar size={12} className="text-gold-gentle" />
           <span>SABTU, 12 SEPTEMBER 2026</span>
@@ -109,7 +109,7 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ guestName, guestCa
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.2, duration: 1 }}
-            className="text-center w-full bg-stone-900/60 border border-gold-gentle/20 backdrop-blur-md rounded-xl p-5 mb-6 shadow-2xl relative overflow-hidden"
+            className="text-center w-full bg-gold-900/60 border border-gold-gentle/20 backdrop-blur-md rounded-xl p-5 mb-6 shadow-2xl relative overflow-hidden"
           >
             {/* Soft inner corner borders for luxury look */}
             <div className="absolute top-2 left-2 w-3 h-3 border-t border-l border-gold-gentle/40"></div>
@@ -117,12 +117,12 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ guestName, guestCa
             <div className="absolute bottom-2 left-2 w-3 h-3 border-b border-l border-gold-gentle/40"></div>
             <div className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-gold-gentle/40"></div>
 
-            <p className="text-xs uppercase tracking-widest text-[#cfaf88] opacity-80 mb-2">Kepada Yth. Bapak/Ibu/Saudara/i</p>
-            <h2 className="font-serif text-lg md:text-xl font-semibold text-white tracking-wide truncate">
+            <p className="text-xs uppercase tracking-widest text-[#000000] opacity-80 mb-2">Kepada Yth. Bapak/Ibu/Saudara/i</p>
+            <h2 className="font-serif text-lg md:text-xl font-semibold text-black tracking-wide truncate ">
               {guestName}
             </h2>
             {guestCategory && (
-              <span className="inline-block mt-2 px-3 py-0.5 rounded-full bg-batik-brown/30 border border-gold-gentle/30 text-[9px] font-mono uppercase text-gold-shine tracking-wider">
+              <span className="inline-block mt-2 px-3 py-0.5 rounded-full bg-batik-brown/30 border border-gold-gentle/30 text-[9px] font-mono uppercase text-black tracking-wider">
                 {guestCategory}
               </span>
             )}
@@ -134,7 +134,7 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ guestName, guestCa
             transition={{ delay: 1.2, duration: 1 }}
             className="text-center mb-6"
           >
-            <span className="inline-block px-3 py-1 rounded bg-stone-900/40 border border-stone-800 text-[10px] uppercase text-stone-400 font-mono tracking-widest">
+            <span className="inline-block px-3 py-1 rounded bg-stone-900/40 border border-stone-800 text-[10px] uppercase text-black font-mono tracking-widest">
               Premium Digital Wedding Invitation
             </span>
           </motion.div>
