@@ -265,6 +265,7 @@ export const RSVP: React.FC<RSVPProps> = ({
 
 						{/* Main scroll elements */}
 						<InvitationMain
+							guest={guest}
 							comments={comments}
 							content={content}
 							settings={settings}

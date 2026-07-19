@@ -15,6 +15,7 @@ import { BatikDivider, BatikMandala, CornerOrnament } from './BatikOrnament';
 import { Content, Settings, Comment, Guest } from '../types';
 
 interface InvitationMainProps {
+  guest: Guest | null;
   comments: Comment[];
   content: Content;
   settings: Settings;
