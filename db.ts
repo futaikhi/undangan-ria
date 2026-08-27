@@ -1,64 +1,32 @@
-import Database from 'better-sqlite3';
-import fs from 'fs';
+import { createClient, Client } from '@libsql/client';
 import path from 'path';
 
-// Ensure the data directory exists
-const isVercel = process.env.VERCEL || process.env.NOW_BUILDER;
-const DATA_DIR = isVercel ? '/tmp' : path.join(process.cwd(), 'data');
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+const USE_TURSO = !!process.env.TURSO_DATABASE_URL;
+
+export const db: Client = USE_TURSO
+  ? createClient({
+      url: process.env.TURSO_DATABASE_URL,
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    })
+  : createClient({
+      url: 'file:./data/guests.db',
+    });
+
+if (!USE_TURSO) {
+  const fs = require('fs');
+  const dataDir = path.join(process.cwd(), 'data');
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
 }
 
-// Database path
-const DB_PATH = path.join(DATA_DIR, 'guests.db');
-const CONTENT_PATH = path.join(DATA_DIR, 'content.json');
-const SETTINGS_PATH = path.join(DATA_DIR, 'settings.json');
-const RSVP_BACKUP_PATH = path.join(DATA_DIR, 'rsvp.json');
-
-// Initialize better-sqlite3
-export const db = new Database(DB_PATH);
-
-// Create SQLite tables if they do not exist
-db.exec(`
-  CREATE TABLE IF NOT EXISTS guests (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT UNIQUE NOT NULL,
-    name TEXT NOT NULL,
-    category TEXT,
-    whatsapp TEXT,
-    status TEXT DEFAULT 'belum_respon', -- 'hadir', 'tidak_hadir', 'belum_respon'
-    guest_count INTEGER DEFAULT 0,
-    opened_count INTEGER DEFAULT 0,
-    last_opened_at TEXT,
-    status_active INTEGER DEFAULT 1 -- 1 for active, 0 for disabled
-  );
-
-  CREATE TABLE IF NOT EXISTS rsvp_comments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    guest_id INTEGER,
-    name TEXT NOT NULL,
-    comment TEXT NOT NULL,
-    is_approved INTEGER DEFAULT 1,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY(guest_id) REFERENCES guests(id) ON DELETE SET NULL
-  );
-`);
-
-// Atomic JSON write helper
-function safeWriteJSON(filePath: string, data: any) {
-  const tempPath = `${filePath}.tmp`;
-  fs.writeFileSync(tempPath, JSON.stringify(data, null, 2), 'utf-8');
-  fs.renameSync(tempPath, filePath);
-}
-
-// Initial Content Defaults
 const defaultContent = {
   bride: {
     nickname: 'Ria',
     fullname: 'Fitria Wulandari, S.I.Kom.',
     father: 'Alm Bapak Utomo',
     mother: 'Ibu Yuaningsih',
-    photo: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80&w=600', // Premium Javanese aesthetic placeholder
+    photo: 'https://i.ibb.co.com/qLftHxTG/HFZ-7993.webp',
     instagram: '@fitriaawdd'
   },
   groom: {
@@ -66,7 +34,7 @@ const defaultContent = {
     fullname: 'Iqram Rainanda, A.Md Tra',
     father: 'Bapak Zainul Arifin',
     mother: 'Ibu Sitti Hindun',
-    photo: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=600', // Premium Javanese aesthetic placeholder
+    photo: 'https://i.ibb.co.com/QFfqVmYf/HFZ-8388.webp',
     instagram: '@rainandaa_'
   },
   quote: {
@@ -146,101 +114,116 @@ const defaultContent = {
   gallery: [
     {
       id: 'g1',
-      url: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800',
+      url: 'https://i.ibb.co.com/k21xBs8k/HFZ-8413.webp',
       caption: 'Kasmaran - Keintiman dalam balutan kebaya tradisional.'
     },
     {
       id: 'g2',
-      url: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80&w=800',
+      url: 'https://i.ibb.co.com/GfDPn959/HFZ-8517.webp',
       caption: 'Langkah Suci - Menyusuri pelataran Pendopo.'
     },
     {
       id: 'g3',
-      url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&q=80&w=800',
+      url: 'https://i.ibb.co.com/Mk5w8fFR/HFZ-8068.webp',
       caption: 'Ikatan Jiwa - Tatapan hangat penuh harapan.'
     },
     {
       id: 'g4',
-      url: 'https://images.unsplash.com/photo-1532712938310-34cb3982ef74?auto=format&fit=crop&q=80&w=800',
+      url: 'https://i.ibb.co.com/ksMJvs7P/HFZ-8141.webp',
+      caption: 'Selasar - Menanti hari yang sakral bersama.'
+    },
+    {
+      id: 'g5',
+      url: 'https://i.ibb.co.com/VYWC1SKF/HFZ-8189.webp',
       caption: 'Selasar - Menanti hari yang sakral bersama.'
     }
   ]
 };
 
-// Initial Settings Defaults
 const defaultSettings = {
-  musicUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', // Soft royalty-free background audio
+  musicUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
   youtubeLiveUrl: '',
   theme: {
-    primaryColor: '#8c6239', // Coklat Batik
-    accentColor: '#d4af37',  // Gold lembut
-    backgroundColor: '#fcfbf7', // Ivory cream
-    darkColor: '#1a1005' // Dark wood
+    primaryColor: '#8c6239',
+    accentColor: '#d4af37',
+    backgroundColor: '#fcfbf7',
+    darkColor: '#1a1005'
   },
   generalOptions: {
-    enableCommentsApproval: false, // Auto-approve comments
+    enableCommentsApproval: false,
     enableMusicAutoplay: true,
     whatsappGreetingTemplate: 'Halo Bapak/Ibu {nama_tamu}\n\nDengan penuh kebahagiaan kami mengundang Anda untuk hadir di acara pernikahan kami:\n\nRia & Iqram\n\nBerikut link undangannya:\n{link_undangan}\n\nMerupakan suatu kehormatan bagi kami apabila Anda berkenan hadir.\n\nTerima kasih.'
   }
 };
 
-// Bootstrap function
-export function bootstrapData() {
-  // Write default content if not exists
-  if (!fs.existsSync(CONTENT_PATH)) {
-    safeWriteJSON(CONTENT_PATH, defaultContent);
+async function getKV(key: string, defaultValue: any) {
+  const rs = await db.execute({ sql: 'SELECT value FROM app_kv WHERE key = ?', args: [key] });
+  if (rs.rows.length > 0) {
+    return JSON.parse(rs.rows[0].value as string);
   }
-  // Write default settings if not exists
-  if (!fs.existsSync(SETTINGS_PATH)) {
-    safeWriteJSON(SETTINGS_PATH, defaultSettings);
+  await db.execute({ sql: 'INSERT INTO app_kv (key, value) VALUES (?, ?)', args: [key, JSON.stringify(defaultValue)] });
+  return defaultValue;
+}
+
+async function setKV(key: string, value: any) {
+  await db.execute({ sql: 'INSERT OR REPLACE INTO app_kv (key, value) VALUES (?, ?)', args: [key, JSON.stringify(value)] });
+}
+
+export async function bootstrapData() {
+  await db.executeMultiple(`
+    CREATE TABLE IF NOT EXISTS guests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      category TEXT,
+      whatsapp TEXT,
+      status TEXT DEFAULT 'belum_respon',
+      guest_count INTEGER DEFAULT 0,
+      opened_count INTEGER DEFAULT 0,
+      last_opened_at TEXT,
+      status_active INTEGER DEFAULT 1
+    );
+
+    CREATE TABLE IF NOT EXISTS rsvp_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      guest_id INTEGER,
+      name TEXT NOT NULL,
+      comment TEXT NOT NULL,
+      is_approved INTEGER DEFAULT 1,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(guest_id) REFERENCES guests(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS app_kv (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+  `);
+
+  const guestRs = await db.execute({ sql: 'SELECT COUNT(*) as count FROM guests', args: [] });
+  const guestCount = guestRs.rows[0].count as number;
+
+  if (guestCount === 0) {
+    await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: ['RIAIQRAM', 'Keluarga Besar & Rekan Sejawat', 'Umum', '628123456789'] });
+    await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: ['VIP2026', 'Yth. Bapak & Ibu Pembimbing Jasa', 'VVIP', '628999999999'] });
   }
-  // Write rsvp.json backup if not exists
-  if (!fs.existsSync(RSVP_BACKUP_PATH)) {
-    safeWriteJSON(RSVP_BACKUP_PATH, []);
-  }
 
-  // Seed default guest if table is empty
-  const guestCount = db.prepare('SELECT COUNT(*) as count FROM guests').get() as { count: number };
-  if (guestCount.count === 0) {
-    const defaultGuests = [
-      { code: 'RIAIQRAM', name: 'Keluarga Besar & Rekan Sejawat', category: 'Umum', whatsapp: '628123456789' },
-      { code: 'VIP2026', name: 'Yth. Bapak & Ibu Pembimbing Jasa', category: 'VVIP', whatsapp: '628999999999' }
-    ];
-    const insert = db.prepare('INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)');
-    for (const g of defaultGuests) {
-      insert.run(g.code, g.name, g.category, g.whatsapp);
-    }
-  }
+  await getKV('content', defaultContent);
+  await getKV('settings', defaultSettings);
 }
 
-// Read and update functions for JSON data
-export function readContent(): typeof defaultContent {
-  return JSON.parse(fs.readFileSync(CONTENT_PATH, 'utf-8'));
+export async function readContent() {
+  return getKV('content', defaultContent);
 }
 
-export function writeContent(data: any) {
-  safeWriteJSON(CONTENT_PATH, data);
+export async function writeContent(data: any) {
+  await setKV('content', data);
 }
 
-export function readSettings(): typeof defaultSettings {
-  return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'));
+export async function readSettings() {
+  return getKV('settings', defaultSettings);
 }
 
-export function writeSettings(data: any) {
-  safeWriteJSON(SETTINGS_PATH, data);
+export async function writeSettings(data: any) {
+  await setKV('settings', data);
 }
-
-export function backupRSVP() {
-  // Sunc rsvps from DB to json
-  const rsvps = db.prepare(`
-    SELECT g.id, g.code, g.name, g.status, g.guest_count,
-           rc.comment, rc.created_at
-    FROM guests g
-    LEFT JOIN rsvp_comments rc ON g.id = rc.guest_id
-    WHERE g.status != 'belum_respon'
-  `).all();
-  safeWriteJSON(RSVP_BACKUP_PATH, rsvps);
-}
-
-// Call bootstrap immediately on load
-bootstrapData();

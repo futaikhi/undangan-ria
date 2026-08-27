@@ -213,8 +213,8 @@ export default function App() {
     return (
       <div className="min-h-screen min-h-dvh bg-stone-950 text-wedding-cream bg-batik-kawung flex flex-col justify-center items-center p-6 text-center">
         <JavaneseGunungan size={100} className="text-gold-gentle opacity-50 mb-6 animate-pulse" />
-        <h3 className="font-serif text-lg text-white font-bold tracking-wide">Amemuji Sugeng Rawuh</h3>
-        <p className="text-stone-400 text-xs font-mono tracking-widest uppercase mt-2">Memuat Undangan Iqram & Ria...</p>
+        <h3 className="font-serif text-lg text-white font-bold tracking-wide">Here you are...</h3>
+        {/* <p className="text-stone-400 text-xs font-mono tracking-widest uppercase mt-2">Memuat Undangan Iqram & Ria...</p> */}
         <div className="w-16 h-0.5 bg-gold-gentle/30 rounded mt-4 overflow-hidden relative">
           <div className="absolute h-full w-8 bg-gold-shine left-0 animate-[shimmer_1.5s_infinite]"></div>
         </div>

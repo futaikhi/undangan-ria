@@ -4,7 +4,7 @@
     "fullname": "Fitria Wulandari, S.I.Kom.",
     "father": "Alm Bapak Utomo",
     "mother": "Ibu Yuaningsih",
-    "photo": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80&w=600",
+    "photo": "https://i.ibb.co.com/qLftHxTG/HFZ-7993.webp",
     "instagram": "@fitriaawdd"
   },
   "groom": {
@@ -12,7 +12,7 @@
     "fullname": "Iqram Rainanda, A.Md Tra",
     "father": "Bapak Zainul Arifin",
     "mother": "Ibu Sitti Hindun",
-    "photo": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=600",
+    "photo": "https://i.ibb.co.com/QFfqVmYf/HFZ-8388.webp",
     "instagram": "@rainandaa_"
   },
   "quote": {
@@ -92,22 +92,27 @@
   "gallery": [
     {
       "id": "g1",
-      "url": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800",
+      "url": "https://i.ibb.co.com/k21xBs8k/HFZ-8413.webp",
       "caption": "Kasmaran - Keintiman dalam balutan kebaya tradisional."
     },
     {
       "id": "g2",
-      "url": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80&w=800",
+      "url": "https://i.ibb.co.com/GfDPn959/HFZ-8517.webp",
       "caption": "Langkah Suci - Menyusuri pelataran Pendopo."
     },
     {
       "id": "g3",
-      "url": "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&q=80&w=800",
+      "url": "https://i.ibb.co.com/Mk5w8fFR/HFZ-8068.webp",
       "caption": "Ikatan Jiwa - Tatapan hangat penuh harapan."
     },
     {
       "id": "g4",
-      "url": "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?auto=format&fit=crop&q=80&w=800",
+      "url": "https://i.ibb.co.com/ksMJvs7P/HFZ-8141.webp",
+      "caption": "Selasar - Menanti hari yang sakral bersama."
+    },
+    {
+      "id": "g5",
+      "url": "https://i.ibb.co.com/VYWC1SKF/HFZ-8189.webp",
       "caption": "Selasar - Menanti hari yang sakral bersama."
     }
   ]
