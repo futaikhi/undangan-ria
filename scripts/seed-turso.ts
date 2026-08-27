@@ -1,24 +1,14 @@
-import { createClient, Client } from '@libsql/client';
-import path from 'path';
-import fs from 'fs';
+import { createClient } from '@libsql/client';
 
-const USE_TURSO = !!process.env.TURSO_DATABASE_URL;
+const url = process.env.TURSO_DATABASE_URL;
+const authToken = process.env.TURSO_AUTH_TOKEN;
 
-export const db: Client = USE_TURSO
-  ? createClient({
-      url: process.env.TURSO_DATABASE_URL || "",
-      authToken: process.env.TURSO_AUTH_TOKEN,
-    })
-  : createClient({
-      url: 'file:./data/guests.db',
-    });
-
-if (!USE_TURSO) {
-  const dataDir = path.join(process.cwd(), 'data');
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
+if (!url || !authToken) {
+  console.error('Please set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN environment variables.');
+  process.exit(1);
 }
+
+const db = createClient({ url, authToken });
 
 const defaultContent = {
   bride: {
@@ -26,7 +16,7 @@ const defaultContent = {
     fullname: 'Fitria Wulandari, S.I.Kom.',
     father: 'Alm Bapak Utomo',
     mother: 'Ibu Yuaningsih',
-    photo: 'https://i.ibb.co.com/qLftHxTG/HFZ-7993.webp',
+    photo: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80&w=600',
     instagram: '@fitriaawdd'
   },
   groom: {
@@ -34,7 +24,7 @@ const defaultContent = {
     fullname: 'Iqram Rainanda, A.Md Tra',
     father: 'Bapak Zainul Arifin',
     mother: 'Ibu Sitti Hindun',
-    photo: 'https://i.ibb.co.com/QFfqVmYf/HFZ-8388.webp',
+    photo: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=600',
     instagram: '@rainandaa_'
   },
   quote: {
@@ -114,27 +104,22 @@ const defaultContent = {
   gallery: [
     {
       id: 'g1',
-      url: 'https://i.ibb.co.com/k21xBs8k/HFZ-8413.webp',
+      url: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800',
       caption: 'Kasmaran - Keintiman dalam balutan kebaya tradisional.'
     },
     {
       id: 'g2',
-      url: 'https://i.ibb.co.com/GfDPn959/HFZ-8517.webp',
+      url: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80&w=800',
       caption: 'Langkah Suci - Menyusuri pelataran Pendopo.'
     },
     {
       id: 'g3',
-      url: 'https://i.ibb.co.com/Mk5w8fFR/HFZ-8068.webp',
+      url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&q=80&w=800',
       caption: 'Ikatan Jiwa - Tatapan hangat penuh harapan.'
     },
     {
       id: 'g4',
-      url: 'https://i.ibb.co.com/ksMJvs7P/HFZ-8141.webp',
-      caption: 'Selasar - Menanti hari yang sakral bersama.'
-    },
-    {
-      id: 'g5',
-      url: 'https://i.ibb.co.com/VYWC1SKF/HFZ-8189.webp',
+      url: 'https://images.unsplash.com/photo-1532712938310-34cb3982ef74?auto=format&fit=crop&q=80&w=800',
       caption: 'Selasar - Menanti hari yang sakral bersama.'
     }
   ]
@@ -156,74 +141,39 @@ const defaultSettings = {
   }
 };
 
-async function getKV(key: string, defaultValue: any) {
-  const rs = await db.execute({ sql: 'SELECT value FROM app_kv WHERE key = ?', args: [key] });
-  if (rs.rows.length > 0) {
-    return JSON.parse(rs.rows[0].value as string);
-  }
-  await db.execute({ sql: 'INSERT INTO app_kv (key, value) VALUES (?, ?)', args: [key, JSON.stringify(defaultValue)] });
-  return defaultValue;
-}
-
-async function setKV(key: string, value: any) {
-  await db.execute({ sql: 'INSERT OR REPLACE INTO app_kv (key, value) VALUES (?, ?)', args: [key, JSON.stringify(value)] });
-}
-
-export async function bootstrapData() {
-  await db.executeMultiple(`
-    CREATE TABLE IF NOT EXISTS guests (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      code TEXT UNIQUE NOT NULL,
-      name TEXT NOT NULL,
-      category TEXT,
-      whatsapp TEXT,
-      status TEXT DEFAULT 'belum_respon',
-      guest_count INTEGER DEFAULT 0,
-      opened_count INTEGER DEFAULT 0,
-      last_opened_at TEXT,
-      status_active INTEGER DEFAULT 1
-    );
-
-    CREATE TABLE IF NOT EXISTS rsvp_comments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      guest_id INTEGER,
-      name TEXT NOT NULL,
-      comment TEXT NOT NULL,
-      is_approved INTEGER DEFAULT 1,
-      created_at TEXT NOT NULL,
-      FOREIGN KEY(guest_id) REFERENCES guests(id) ON DELETE SET NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS app_kv (
-      key TEXT PRIMARY KEY,
-      value TEXT NOT NULL
-    );
-  `);
-
-  const guestRs = await db.execute({ sql: 'SELECT COUNT(*) as count FROM guests', args: [] });
-  const guestCount = guestRs.rows[0].count as number;
+async function main() {
+  const guestCountRs = await db.execute({ sql: 'SELECT COUNT(*) as count FROM guests', args: [] });
+  const guestCount = guestCountRs.rows[0].count as number;
 
   if (guestCount === 0) {
     await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: ['RIAIQRAM', 'Keluarga Besar & Rekan Sejawat', 'Umum', '628123456789'] });
     await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: ['VIP2026', 'Yth. Bapak & Ibu Pembimbing Jasa', 'VVIP', '628999999999'] });
+    console.log('Default guests seeded.');
+  } else {
+    console.log(`Guests already exist (${guestCount}), skipping seed.`);
   }
 
-  await getKV('content', defaultContent);
-  await getKV('settings', defaultSettings);
+  const contentRs = await db.execute({ sql: 'SELECT value FROM app_kv WHERE key = ?', args: ['content'] });
+  if (contentRs.rows.length === 0) {
+    await db.execute({ sql: 'INSERT INTO app_kv (key, value) VALUES (?, ?)', args: ['content', JSON.stringify(defaultContent)] });
+    console.log('Default content seeded.');
+  } else {
+    console.log('Content already exists, skipping seed.');
+  }
+
+  const settingsRs = await db.execute({ sql: 'SELECT value FROM app_kv WHERE key = ?', args: ['settings'] });
+  if (settingsRs.rows.length === 0) {
+    await db.execute({ sql: 'INSERT INTO app_kv (key, value) VALUES (?, ?)', args: ['settings', JSON.stringify(defaultSettings)] });
+    console.log('Default settings seeded.');
+  } else {
+    console.log('Settings already exist, skipping seed.');
+  }
+
+  console.log('Turso database seeding completed.');
+  await db.close();
 }
 
-export async function readContent() {
-  return getKV('content', defaultContent);
-}
-
-export async function writeContent(data: any) {
-  await setKV('content', data);
-}
-
-export async function readSettings() {
-  return getKV('settings', defaultSettings);
-}
-
-export async function writeSettings(data: any) {
-  await setKV('settings', data);
-}
+main().catch((err) => {
+  console.error('Failed to seed Turso database:', err);
+  process.exit(1);
+});

@@ -6,8 +6,11 @@ import {
   readContent,
   writeContent,
   readSettings,
-  writeSettings
+  writeSettings,
+  bootstrapData
 } from '../db.js';
+
+await bootstrapData();
 
 const app = express();
 
