@@ -378,7 +378,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
           </div>
           <div>
             <h1 className="font-serif text-md md:text-lg text-white font-bold leading-none tracking-wide">
-              Ria & Iqram Wedding Dashboard
+              Iqram & Ria Wedding Dashboard
             </h1>
             <span className="text-[10px] text-white-gentle/80 uppercase font-mono tracking-wider">SECURE ADM PANEL</span>
           </div>

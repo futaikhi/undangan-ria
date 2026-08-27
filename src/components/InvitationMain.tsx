@@ -31,7 +31,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
   // Get countdown target date from Content (defaults to Akad nikah ISO string)
-  const targetDateStr = content.events.akad.isoDate || '2026-09-12T08:00:00+07:00';
+  const targetDateStr = content.events.resepsi.isoDate || '2026-09-12T08:00:00+07:00';
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -88,7 +88,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
 
           <span className="text-[10px] tracking-widest uppercase text-black font-mono mb-2">WALIMATUL 'URSY</span>
           <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-semibold text-gold-gradient tracking-wider mt-2 mb-4">
-            Ria & Iqram
+            Iqram & Ria
           </h1>
           
           <BatikDivider />
@@ -97,9 +97,6 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
           <p className="font-serif italic text-sm md:text-base text-stone-200 px-6 max-w-xl leading-relaxed mt-2 mb-8">
             {content.quote.text}
           </p>
-          <span className="text-[10px] uppercase tracking-widest text-gold-gentle font-mono">
-            {content.quote.source}
-          </span>
 
           {/* COUNTDOWN TILES */}
           <div className="grid grid-cols-4 gap-3 sm:gap-4 mt-12 w-full max-w-md px-4">
@@ -298,7 +295,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
               </div>
 
               <a
-                href={content.events.akad.mapsUrl}
+                href={content.events.resepsi.mapsUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-8 flex items-center justify-center gap-2 py-3 bg-stone-900 hover:bg-batik-brown text-white rounded-full text-xs uppercase tracking-wider font-semibold shadow-lg transition-colors cursor-pointer"
@@ -548,7 +545,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
           <BatikMandala size={80} className="text-gold-gentle/60 mb-6" />
 
           <h3 className="font-display text-2xl font-semibold text-gold-gradient tracking-widest uppercase">
-            Ria & Iqram
+            Iqram & Ria
           </h3>
           <p className="text-[10px] uppercase font-mono tracking-widest text-stone-400 mt-1 mb-8">Walimatul 'Ursy - Yogyakarta</p>
 
