@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
+	Calendar,
 	Heart,
+	MapPin,
+	Navigation,
 	Send
 } from 'lucide-react';
 import { InvitationMain } from './InvitationMain';
@@ -92,11 +95,22 @@ export const RSVP: React.FC<RSVPProps> = ({
 							<div className="absolute inset-0 bg-batik-kawung opacity-5 pointer-events-none"></div>
 
 							<div className="max-w-2xl mx-auto text-center relative z-10">
-								<span className="text-xs uppercase font-mono tracking-widest text-gold-gentle block mb-2">Konfirmasi Datang</span>
 								<h2 className="font-display text-3xl sm:text-4xl font-semibold text-gold-gradient tracking-wide">
 									Konfirmasi Kehadiran
 								</h2>
 								<BatikDivider />
+								<div className="text-xs font-mono tracking-wider text-gold-gentle block mb-6 flex items-center justify-center gap-2 my-6">
+									<Calendar size={12} className="text-gold-gentle" />
+									Jumat, 04 Desember 2026
+								</div>
+								<span className="text-xs font-mono tracking-wider text-gold-gentle block mb-6 flex items-center justify-center gap-2 my-6">
+									<MapPin size={12} className="text-gold-gentle" />
+									Tanjung Kodok Beach Resort <br />Paciran, Lamongan
+								</span>
+								<a href="https://maps.app.goo.gl/uyk57Sp6yyJhtCxP6" target='_blank' className="flex items-center justify-center gap-2 my-6 py-3.5 rounded-xl text-xs tracking-wider font-semibold border-2 transition-all cursor-pointer bg-batik-brown border-gold-gentle text-white shadow-md w-50 place-self-center">
+									<Navigation size={15} className="white" />
+									Lihat Lokasi
+								</a>
 
 								{/* Guest personalization greeting card inside RSVP layout */}
 								{guest && (
@@ -148,7 +162,7 @@ export const RSVP: React.FC<RSVPProps> = ({
 													}`}
 												id="rsvp-hadir-btn"
 											>
-												Saged Rawuh (Hadir)
+												Hadir
 											</button>
 											<button
 												type="button"
@@ -159,7 +173,7 @@ export const RSVP: React.FC<RSVPProps> = ({
 													}`}
 												id="rsvp-absen-btn"
 											>
-												Mboten Saged (Absen)
+												Tidak Hadir
 											</button>
 										</div>
 									</div>

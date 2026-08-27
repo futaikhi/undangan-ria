@@ -46,15 +46,7 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ guestName, guestCa
           transition={{ duration: 1.5 }}
           className="font-serif italic text-xs tracking-widest text-gold-gentle"
         >
-          Mugi Pinaringan Karahayon lan Kanugrahan Gusti
-        </motion.p>
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.5 }}
-          transition={{ duration: 2 }}
-          className="text-[10px] tracking-widest text-[#000000] mt-1"
-        >
-          - WALIMATUL 'URSY -
+          With Love, Prayers, and Gratitude
         </motion.p>
       </div>
 
@@ -87,7 +79,7 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ guestName, guestCa
           transition={{ delay: 0.6, duration: 1.5, type: 'spring' }}
           className="font-display text-4xl sm:text-5xl md:text-6xl font-semibold mt-4 text-gold-gradient tracking-wide"
         >
-          Ria & Iqram
+          IQRAM & RIA
         </motion.h1>
 
         {/* Date visual mockup */}
@@ -98,7 +90,7 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ guestName, guestCa
           className="flex items-center gap-2 mt-4 text-[11px] font-mono tracking-widest text-black"
         >
           <Calendar size={12} className="text-gold-gentle" />
-          <span>SABTU, 12 SEPTEMBER 2026</span>
+          <span>JUMAT, 04 DESEMBER 2026</span>
         </motion.div>
       </div>
 
