@@ -241,7 +241,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
       </section>
 
       {/* 4. DETAIL ACARA & MAPS */}
-      <section className="py-24 px-4 bg-paper-texture relative" id="section-events">
+      <section className="py-12 px-4 bg-paper-texture relative" id="section-events">
         <div className="max-w-5xl mx-auto text-center">
           <span className="text-xs uppercase font-mono tracking-widest text-batik-brown block mb-2">Rundown Acara</span>
           <h2 className="font-display text-3xl sm:text-4xl font-semibold text-stone-900 tracking-wide">
@@ -562,7 +562,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
           
           <p className="text-[10px] text-stone-500 font-mono tracking-wider">
             Premium Javanese Wedding Digital Invitation © 2026<br />
-            Designed for Ria Lestari & Muhammad Iqram
+            Designed for Fitria Wulandari & Muhammad Iqram
           </p>
         </div>
       </footer>

@@ -121,7 +121,7 @@ export const RSVP: React.FC<RSVPProps> = ({
 										<div className="flex-grow">
 											<p className="text-[10px] text-stone-400 uppercase tracking-widest">Tamu Undangan Terhormat</p>
 											<p className="text-sm font-semibold font-serif text-white">{guest.name}</p>
-											{guest.category && <p className="text-[9px] text-[#000000] uppercase font-mono mt-0.5">Kategori: {guest.category}</p>}
+											{guest.category && <p className="text-[9px] text-white uppercase font-mono mt-0.5">Kategori: {guest.category}</p>}
 										</div>
 									</div>
 								)}
