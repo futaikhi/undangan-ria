@@ -70,7 +70,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
         {/* Large background couple photo (Parallax effect) */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-45 mix-blend-overlay z-0" 
-          style={{ backgroundImage: `url(${content.gallery[0].url})` }}
+          style={{ backgroundImage: `url(${content.gallery[2].url})` }}
         ></div>
 
         <CornerOrnament className="absolute top-4 left-4 text-gold-gentle opacity-50 z-10" />
