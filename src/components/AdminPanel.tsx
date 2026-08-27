@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
+import * as XLSX from 'xlsx';
 import {
   Users,
   PlusCircle,
@@ -60,6 +61,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const [bulkCategory, setBulkCategory] = useState('Umum');
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [isImportingBulk, setIsImportingBulk] = useState(false);
+
+  // Excel import state
+  const [excelPreview, setExcelPreview] = useState<{ name: string; category: string; whatsapp: string }[]>([]);
+  const [excelFileName, setExcelFileName] = useState('');
+  const [isImportingExcel, setIsImportingExcel] = useState(false);
 
   // Editing modes
   const [editingGuestId, setEditingGuestId] = useState<number | null>(null);
@@ -174,13 +180,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     setIsImportingBulk(true);
 
     try {
-      // Parse multi-line comma/semicolon strings
       const lines = bulkInput.split('\n');
       const parsedGuests = lines.map(line => {
         const parts = line.split(/[;,]/);
         const name = parts[0] ? parts[0].trim() : '';
         const category = parts[1] ? parts[1].trim() : bulkCategory;
-        const whatsapp = parts[2] ? parts[2].trim().replace(/[^0-9]/g, '') : '';
+        const rawWa = parts[2] ? parts[2].trim() : '';
+        const whatsapp = normalizePhone(rawWa);
         return { name, category, whatsapp };
       }).filter(g => g.name.length > 0);
 
@@ -209,6 +215,71 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
       alert('Kegagalan jaringan');
     } finally {
       setIsImportingBulk(false);
+    }
+  };
+
+  const normalizePhone = (raw: string): string => {
+    const digits = raw.replace(/[^0-9]/g, '');
+    if (!digits) return '';
+    if (digits.startsWith('62')) return digits;
+    if (digits.startsWith('0')) return '62' + digits.slice(1);
+    return '62' + digits;
+  };
+
+  const handleExcelFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = evt.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const firstSheet = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[firstSheet];
+        const jsonData = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+        const parsed = jsonData.map((row: any) => {
+          const name = String(row.name || row.nama || row['Nama'] || row['NAMA'] || '').trim();
+          const category = String(row.category || row.kategori || row['Kategori'] || row['KATEGORI'] || '').trim();
+          const rawWa = String(row.whatsapp || row.wa || row['WhatsApp'] || row['WA'] || row['No HP'] || row['no_hp'] || '').trim();
+          const whatsapp = normalizePhone(rawWa);
+          return { name, category, whatsapp };
+        }).filter((g: any) => g.name.length > 0);
+
+        setExcelPreview(parsed);
+        setExcelFileName(file.name);
+      } catch (err) {
+        alert('Gagal membaca file Excel: ' + (err as any).message);
+      }
+    };
+    reader.readAsBinaryString(file);
+    e.target.value = '';
+  };
+
+  const handleExcelImport = async () => {
+    if (excelPreview.length === 0) return;
+    setIsImportingExcel(true);
+    try {
+      const response = await fetch('/api/admin/guests/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guests: excelPreview })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setExcelPreview([]);
+        setExcelFileName('');
+        setShowBulkModal(false);
+        loadDashboardData();
+        alert(`Berhasil mengimpor ${data.count} tamu dari Excel!`);
+      } else {
+        alert(data.error || 'Gagal mengimpor dari Excel');
+      }
+    } catch {
+      alert('Kegagalan jaringan');
+    } finally {
+      setIsImportingExcel(false);
     }
   };
 
@@ -883,50 +954,99 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                     </span>
                   </p>
 
-                  <form onSubmit={handleBulkImport} className="space-y-4">
-                    <div>
-                      <label className="block text-xs uppercase tracking-widest text-white mb-1">Kategori Default (Jika baris tidak menyebutkan)</label>
-                      <select
-                        value={bulkCategory}
-                        onChange={(e) => setFilterCategory(e.target.value)}
-                        className="w-full bg-stone-950 border border-stone-800 rounded-xl p-3 focus:border-gold-gentle focus:outline-none text-xs"
-                      >
-                        <option value="Umum">Umum</option>
-                        <option value="VVIP">VVIP / Keluarga</option>
-                        <option value="VIP">VIP</option>
-                        <option value="Teman Dekat">Teman Dekat</option>
-                      </select>
-                    </div>
+                   <form onSubmit={handleBulkImport} className="space-y-4">
+                     <div>
+                       <label className="block text-xs uppercase tracking-widest text-white mb-1">Kategori Default (Jika baris tidak menyebutkan)</label>
+                       <select
+                         value={bulkCategory}
+                         onChange={(e) => setFilterCategory(e.target.value)}
+                         className="w-full bg-stone-950 border border-stone-800 rounded-xl p-3 focus:border-gold-gentle focus:outline-none text-xs"
+                       >
+                         <option value="Umum">Umum</option>
+                         <option value="VVIP">VVIP / Keluarga</option>
+                         <option value="VIP">VIP</option>
+                         <option value="Teman Dekat">Teman Dekat</option>
+                       </select>
+                     </div>
 
-                    <div>
-                      <label className="block text-xs uppercase tracking-widest text-white mb-1">Daftar Baris Tamu</label>
+                     <div className="border-t border-stone-800 pt-4">
+                       <label className="block text-xs uppercase tracking-widest text-white mb-2">Atau Import dari Excel</label>
+                       <input
+                         type="file"
+                         accept=".xlsx,.xls,.csv"
+                         onChange={handleExcelFile}
+                         className="block w-full text-xs text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gold-gentle file:text-stone-900 hover:file:bg-gold-shine cursor-pointer"
+                       />
+                       {excelFileName && (
+                         <p className="text-[10px] text-stone-400 mt-1 font-mono">File: {excelFileName} — {excelPreview.length} baris terdeteksi</p>
+                       )}
+
+                       {excelPreview.length > 0 && (
+                         <div className="mt-3 max-h-48 overflow-y-auto border border-stone-800 rounded-xl">
+                           <table className="w-full text-left text-[11px]">
+                             <thead className="bg-stone-950 text-white-gentle uppercase">
+                               <tr>
+                                 <th className="p-2">Nama</th>
+                                 <th className="p-2">Kategori</th>
+                                 <th className="p-2">WhatsApp</th>
+                               </tr>
+                             </thead>
+                             <tbody>
+                               {excelPreview.slice(0, 20).map((row, idx) => (
+                                 <tr key={idx} className="border-t border-stone-800">
+                                   <td className="p-2 text-white">{row.name}</td>
+                                   <td className="p-2 text-white">{row.category || '-'}</td>
+                                   <td className="p-2 text-white font-mono">{row.whatsapp || '-'}</td>
+                                 </tr>
+                               ))}
+                             </tbody>
+                           </table>
+                           {excelPreview.length > 20 && (
+                             <p className="text-[10px] text-stone-500 p-2">...dan {excelPreview.length - 20} baris lainnya</p>
+                           )}
+                         </div>
+                       )}
+
+                       {excelPreview.length > 0 && (
+                         <button
+                           type="button"
+                           onClick={handleExcelImport}
+                           disabled={isImportingExcel}
+                           className="mt-3 w-full py-2 bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-500 font-bold text-xs uppercase tracking-widest rounded-lg cursor-pointer transition-colors"
+                         >
+                           {isImportingExcel ? 'Mengimpor...' : `Import ${excelPreview.length} Tamu dari Excel`}
+                         </button>
+                       )}
+                     </div>
+
+                     <div className="border-t border-stone-800 pt-4">
+                       <label className="block text-xs uppercase tracking-widest text-white mb-1">Daftar Baris Tamu (Text)</label>
                       <textarea
-                        required
-                        rows={8}
+                        rows={6}
                         placeholder="Contoh:&#10;Bapak Hartanto; VIP; 628135261&#10;Ibu Lestari; Keluarga; 628994119"
                         value={bulkInput}
                         onChange={(e) => setBulkInput(e.target.value)}
                         className="w-full bg-stone-950 border border-stone-800 rounded-xl p-3 text-xs focus:border-gold-gentle focus:outline-none font-mono"
                       />
-                    </div>
+                     </div>
 
-                    <div className="flex justify-end gap-3 pt-4 border-t border-stone-850">
-                      <button
-                        type="button"
-                        onClick={() => setShowBulkModal(false)}
-                        className="px-4 py-2 border border-stone-800 rounded-lg text-xs text-white hover:text-white"
-                      >
-                        Kembali
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={isImportingBulk}
-                        className="px-5 py-2 bg-batik-brown text-white border border-gold-gentle font-bold text-xs uppercase tracking-widest rounded-lg"
-                      >
-                        {isImportingBulk ? 'Memproses...' : 'Impor Daftar Tamu'}
-                      </button>
-                    </div>
-                  </form>
+                     <div className="flex justify-end gap-3 pt-4 border-t border-stone-850">
+                       <button
+                         type="button"
+                         onClick={() => setShowBulkModal(false)}
+                         className="px-4 py-2 border border-stone-800 rounded-lg text-xs text-white hover:text-white"
+                       >
+                         Kembali
+                       </button>
+                       <button
+                         type="submit"
+                         disabled={isImportingBulk}
+                         className="px-5 py-2 bg-batik-brown text-white border border-gold-gentle font-bold text-xs uppercase tracking-widest rounded-lg"
+                       >
+                         {isImportingBulk ? 'Memproses...' : 'Impor Daftar Tamu'}
+                       </button>
+                     </div>
+                   </form>
                 </div>
               </div>
             )}
