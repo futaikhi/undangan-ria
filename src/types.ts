@@ -49,6 +49,7 @@ export interface EventDetails {
 export interface Events {
   akad: EventDetails;
   resepsi: EventDetails;
+  praresepsi: EventDetails;
 }
 
 export interface StoryItem {

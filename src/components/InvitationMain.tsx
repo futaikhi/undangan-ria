@@ -86,7 +86,6 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
             <BatikMandala size={110} className="text-gold-gentle opacity-80 mb-6" />
           </motion.div>
 
-          <span className="text-[10px] tracking-widest uppercase text-black font-mono mb-2">WALIMATUL 'URSY</span>
           <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-semibold text-gold-gradient tracking-wider mt-2 mb-4">
             Iqram & Ria
           </h1>
@@ -118,7 +117,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
                 <span className="font-mono text-xl sm:text-2xl md:text-3xl font-bold text-gold-shine">
                   {col.val.toString().padStart(2, '0')}
                 </span>
-                <span className="text-[10px] text-black uppercase tracking-widest mt-1 font-serif">
+                <span className="text-[10px] text-white uppercase tracking-widest mt-1 font-serif">
                   {col.label}
                 </span>
               </motion.div>
@@ -132,9 +131,8 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
 
       {/* 2. BRIDE & GROOM PROFILE */}
       <section className="relative py-24 px-4 max-w-5xl mx-auto text-center" id="section-profile">
-        <span className="text-xs uppercase font-mono tracking-widest text-batik-brown block mb-2">Pasangan Pengantin</span>
         <h2 className="font-display text-3xl sm:text-4xl font-semibold text-stone-900 tracking-wide">
-          Sariing Tresno Suci
+          And then, There was you
         </h2>
         <BatikDivider />
 
@@ -240,9 +238,8 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
       {/* 4. DETAIL ACARA & MAPS */}
       <section className="py-12 px-4 bg-paper-texture relative" id="section-events">
         <div className="max-w-5xl mx-auto text-center">
-          <span className="text-xs uppercase font-mono tracking-widest text-batik-brown block mb-2">Rundown Acara</span>
           <h2 className="font-display text-3xl sm:text-4xl font-semibold text-stone-900 tracking-wide">
-            Dinten Kasucian & Resepsi
+            Rundown Acara
           </h2>
           <BatikDivider />
 
@@ -296,6 +293,62 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
 
               <a
                 href={content.events.resepsi.mapsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-8 flex items-center justify-center gap-2 py-3 bg-stone-900 hover:bg-batik-brown text-white rounded-full text-xs uppercase tracking-wider font-semibold shadow-lg transition-colors cursor-pointer"
+              >
+                <MapPin size={14} />
+                <span>Petunjuk Lokasi Google Maps</span>
+              </a>
+            </motion.div>
+
+            {/* PRA-RESEPSI */}
+            <motion.div
+              initial={{ opacity: 0, y: 45 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.1 }}
+              className="bg-white border-2 border-double border-gold-gentle/40 rounded-3xl p-8 sm:p-10 shadow-xl flex flex-col justify-between hover:border-gold-gentle transition-colors duration-300 relative overflow-hidden"
+            >
+              <div>
+                <div className="w-12 h-12 rounded-full bg-amber-50 border border-gold-gentle flex items-center justify-center mx-auto mb-6 shadow">
+                  <Heart size={18} className="text-gold-gentle fill-current text-gold-gentle animate-pulse" />
+                </div>
+                <h3 className="font-serif text-2xl font-bold text-batik-brown tracking-wide mb-2">
+                  {content.events.praresepsi.title}
+                </h3>
+                <div className="h-0.5 w-12 bg-gold-gentle mx-auto mb-6"></div>
+
+                <div className="space-y-4 text-left max-w-xs mx-auto text-stone-600 text-sm">
+                  <div className="flex items-start gap-3">
+                    <Calendar size={16} className="text-gold-gentle mt-1 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-stone-800">Hari & Tanggal</p>
+                      <p>{content.events.praresepsi.date}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Clock size={16} className="text-gold-gentle mt-1 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-stone-800">Waktu</p>
+                      <p>{content.events.praresepsi.time}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <MapPin size={16} className="text-gold-gentle mt-1 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-stone-800">Tempat</p>
+                      <p className="font-bold text-stone-900">{content.events.praresepsi.location}</p>
+                      <p className="text-xs leading-relaxed text-stone-500 mt-1">{content.events.praresepsi.address}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <a
+                href={content.events.praresepsi.mapsUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-8 flex items-center justify-center gap-2 py-3 bg-stone-900 hover:bg-batik-brown text-white rounded-full text-xs uppercase tracking-wider font-semibold shadow-lg transition-colors cursor-pointer"
@@ -374,7 +427,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
             <div className="rounded-2xl overflow-hidden h-72 sm:h-96 border border-stone-150">
               <iframe
                 title="Google Maps Location"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3953.0361009941995!2d110.39861617551307!3d-7.785934492233777!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e7a59c0490bf03b%3A0x6b42b8eec4a0af26!2sPendopo%20Agung%20Royal%20Ambarrukmo!5e0!3m2!1sid!2sid!4v1700000000000!5m2!1sid!2sid"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3961.2002021571966!2d112.35774099999999!3d-6.8665967!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e77c2400e695c8f%3A0xd30a4707034bb0c!2sTanjung%20Kodok%20Beach%20Resort!5e0!3m2!1sen!2sid!4v1787818031114!5m2!1sen!2sid"
                 width="15"
                 className="w-full h-full border-0"
                 allowFullScreen={true}
@@ -397,9 +450,8 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
       {/* 5. PHOTO GALLERY MASONRY */}
       <section className="py-24 px-4 bg-stone-900 text-wedding-cream relative" id="section-gallery">
         <div className="max-w-5xl mx-auto text-center">
-          <span className="text-xs uppercase font-mono tracking-widest text-gold-gentle block mb-2">Gallery Prewedding</span>
           <h2 className="font-display text-3xl sm:text-4xl font-semibold text-gold-gradient tracking-wide">
-            Garising Tresno Sinawang
+            Gallery Prewedding
           </h2>
           <BatikDivider />
 
@@ -436,7 +488,6 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
       {/* 6. WEDDING GIFT */}
       <section className="py-24 px-4 bg-paper-texture" id="section-gift">
         <div className="max-w-4xl mx-auto text-center">
-          <span className="text-xs uppercase font-mono tracking-widest text-batik-brown block mb-2">Palinggihan Kasucian</span>
           <h2 className="font-display text-3xl sm:text-4xl font-semibold text-stone-900 tracking-wide">
             Kado Nikah Digital
           </h2>
@@ -489,7 +540,6 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
       {/* 8. LIVE BOOK COMMENTS VIEW */}
       <section className="py-24 px-4 bg-paper-texture" id="section-messages-list">
         <div className="max-w-4xl mx-auto text-center">
-          <span className="text-xs uppercase font-mono tracking-widest text-batik-brown block mb-2">Catatan Ucapan Luhur</span>
           <h2 className="font-display text-3xl sm:text-4xl font-semibold text-stone-900 tracking-wide">
             Doa & Restu Para Tamu
           </h2>
@@ -547,7 +597,8 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
           <h3 className="font-display text-2xl font-semibold text-gold-gradient tracking-widest uppercase">
             Iqram & Ria
           </h3>
-          <p className="text-[10px] uppercase font-mono tracking-widest text-stone-400 mt-1 mb-8">Walimatul 'Ursy - Yogyakarta</p>
+
+          <p className="text-[10px] uppercase font-mono tracking-widest text-stone-400 mt-1 mb-8">AND THEN, THERE WAS YOU - LAMONGAN</p>
 
           <p className="text-xs text-stone-400 font-sans leading-relaxed px-6 italic mb-6">
             “Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu kepada kedua mempelai.”

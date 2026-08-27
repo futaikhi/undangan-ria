@@ -1,43 +1,52 @@
 {
   "bride": {
     "nickname": "Ria",
-    "fullname": "Ria Lestari, S.Kom.",
-    "father": "Bapak Ir. H. Bambang Susilo",
-    "mother": "Ibu Hj. Sri Rahayu",
+    "fullname": "Fitria Wulandari, S.I.Kom.",
+    "father": "Alm Bapak Utomo",
+    "mother": "Ibu Yuaningsih",
     "photo": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80&w=600",
-    "instagram": "@ria.lestari"
+    "instagram": "@fitriaawdd"
   },
   "groom": {
     "nickname": "Iqram",
-    "fullname": "Muhammad Iqram, M.B.A.",
-    "father": "Bapak H. Hardi Pranoto",
-    "mother": "Ibu Hj. Ningsih Purwanti",
+    "fullname": "Iqram Rainanda, A.Md Tra",
+    "father": "Bapak Zainul Arifin",
+    "mother": "Ibu Sitti Hindun",
     "photo": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=600",
-    "instagram": "@iqram.pranoto"
+    "instagram": "@rainandaa_"
   },
   "quote": {
-    "text": "“Mila karsaning Hyang Widhi, ingkang saged miyaraken rasaning katresnan satuhu ingkang suci. Mugi tansah pinaringan berkah lan karahayon.”",
-    "translation": "“Atas kehendak Tuhan Yang Maha Esa, yang dapat menumbuhkan rasa cinta suci yang sejati. Semoga selalu mendapatkan berkah dan kesejahteraan.”",
-    "source": "Serat Wedhatama / Filosofi Leluhur Jawa"
+    "text": "“Pada akhirnya, cinta bukan tentang menemukan seseorang yang sempurna, tetapi tentang menemukan seseorang yang ingin kita temui, lagi dan lagi, di setiap versi kehidupan. After all the little moments, the laughter, the growing, and the choosing — here we are. Dengan penuh syukur, kami melangkah menuju satu perjalanan baru, membawa cinta yang sederhana, doa yang panjang, dan harapan untuk tumbuh bersama, selamanya.”",
+    "translation": "",
+    "source": ""
   },
   "events": {
     "akad": {
       "title": "Akad Nikah",
-      "date": "Sabtu, 12 September 2026",
-      "isoDate": "2026-09-12T08:00:00+07:00",
-      "time": "08:00 - 10:00 WIB",
-      "location": "Pendopo Agung Royal Ambarrukmo",
-      "address": "Jl. Laksda Adisucipto No.81, Ambarukmo, Caturtunggal, Kec. Depok, Sleman, D.I. Yogyakarta",
-      "mapsUrl": "https://maps.app.goo.gl/uP63sVGrAL9p5E2o8"
+      "date": "Jumat, 06 Desember 2026",
+      "isoDate": "2026-12-06T14:00:00+07:00",
+      "time": "14:00 - 15:00 WIB",
+      "location": "Samudera Hall, Tanjung Kodok Beach Resort, Paciran, Lamongan",
+      "address": "Jl. Raya Paciran, Paciran, Kec. Paciran, Kabupaten Lamongan, Jawa Timur 62264",
+      "mapsUrl": "https://maps.app.goo.gl/uyk57Sp6yyJhtCxP6"
+    },
+    "praresepsi": {
+      "title": "Pra-Resepsi Sunset",
+      "date": "Jumat, 06 Desember 2026",
+      "isoDate": "2026-12-06T15:30:00+07:00",
+      "time": "15:30 - 18:00 WIB",
+      "location": "Outdoor Terrace, Tanjung Kodok Beach Resort, Paciran Lamongan",
+      "address": "Jl. Raya Paciran, Paciran, Kec. Paciran, Kabupaten Lamongan, Jawa Timur 62264",
+      "mapsUrl": "https://maps.app.goo.gl/uyk57Sp6yyJhtCxP6"
     },
     "resepsi": {
-      "title": "Resepsi Pernikahan",
-      "date": "Sabtu, 12 September 2026",
-      "isoDate": "2026-09-12T11:00:00+07:00",
-      "time": "11:00 - 14:00 WIB",
-      "location": "Pendopo Agung Royal Ambarrukmo",
-      "address": "Jl. Laksda Adisucipto No.81, Ambarukmo, Caturtunggal, Kec. Depok, Sleman, D.I. Yogyakarta",
-      "mapsUrl": "https://maps.app.goo.gl/uP63sVGrAL9p5E2o8"
+      "title": "Resepsi",
+      "date": "Jumat, 06 Desember 2026",
+      "isoDate": "2026-12-06T18:30:00+07:00",
+      "time": "18:30 - 20:30 WIB",
+      "location": "Outdoor Terrace, Tanjung Kodok Beach Resort, Paciran Lamongan",
+      "address": "Jl. Raya Paciran, Paciran, Kec. Paciran, Kabupaten Lamongan, Jawa Timur 62264",
+      "mapsUrl": "https://maps.app.goo.gl/uyk57Sp6yyJhtCxP6"
     }
   },
   "story": [
@@ -63,14 +72,14 @@
   "gifts": [
     {
       "provider": "BCA",
-      "accountNumber": "1234567890",
-      "holder": "Ria Lestari",
+      "accountNumber": "3301540335",
+      "holder": "Fitria Wulandari",
       "icon": "CreditCard"
     },
     {
-      "provider": "Mandiri",
-      "accountNumber": "9876543210",
-      "holder": "Muhammad Iqram",
+      "provider": "Bank Jatim",
+      "accountNumber": "0282366479",
+      "holder": "Iqram Rainanda",
       "icon": "CreditCard"
     },
     {
