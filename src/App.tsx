@@ -49,7 +49,7 @@ export default function App() {
 
       // 3. Extract Guest Code
       let code: string | null = codeParam;
-      
+
       // Handle /i/CODE clean URL formatting
       if (pathname.startsWith('/i/')) {
         const parts = pathname.split('/');
@@ -63,7 +63,7 @@ export default function App() {
     };
 
     parseUrl();
-    
+
     // Listen for state pops/back actions
     window.addEventListener('popstate', parseUrl);
     return () => window.removeEventListener('popstate', parseUrl);
@@ -85,6 +85,17 @@ export default function App() {
     }
   };
 
+  const setHeaderPreload = async (content: Content) => {
+    const link = document.createElement("link");
+
+    link.rel = "preload";
+    link.as = "image";
+    link.href = content.gallery[3].url;
+    link.fetchPriority = "high";
+
+    document.head.appendChild(link);
+  };
+
   // Main fetch function for public invitation
   const fetchInvitationData = async (code: string | null) => {
     setIsLoading(true);
@@ -99,6 +110,7 @@ export default function App() {
           setComments(data.comments || []);
           setContent(data.content);
           setSettings(data.settings);
+          setHeaderPreload(data.content);
         } else {
           // Fallback to general public info if code doesn't exist
           const fallbackResp = await fetch('/api/public/content');

@@ -73,8 +73,8 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
           style={{ backgroundImage: `url(${content.gallery[2].url})` }}
         ></div>
 
-        <CornerOrnament className="absolute top-4 left-4 text-gold-gentle opacity-50 z-10" />
-        <CornerOrnament className="absolute top-4 right-4 text-gold-gentle opacity-50 z-10" flippedX />
+        <CornerOrnament className="absolute top-4 left-4 text-gold-shine opacity-50 z-10" />
+        <CornerOrnament className="absolute top-4 right-4 text-gold-shine opacity-50 z-10" flippedX />
 
         <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center">
           <motion.div
@@ -86,7 +86,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
             <BatikMandala size={110} className="text-gold-gentle opacity-80 mb-6" />
           </motion.div>
 
-          <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-semibold text-gold-gradient tracking-wider mt-2 mb-4">
+          <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-semibold text-gold-shine tracking-wider mt-2 mb-4">
             Iqram & Ria
           </h1>
           
