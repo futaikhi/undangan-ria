@@ -120,7 +120,7 @@ export default function App() {
   const updateMetaTags = (guestName: string | null, content: Content | null) => {
     const name = guestName || 'Tamu Undangan';
     const text = content?.header?.text || '';
-    const imageUrl = content?.header?.imageUrl || '/images/logo.png';
+    const imageUrl = '/images/logo.png';
 
     document.title = `Undangan Pernikahan Ria & Iqram - ${name}`;
 
