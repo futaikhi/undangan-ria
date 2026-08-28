@@ -117,12 +117,42 @@ export default function App() {
   };
 
   // Main fetch function for public invitation
+  const updateMetaTags = (guestName: string | null, content: Content | null) => {
+    const name = guestName || 'Tamu Undangan';
+    const text = content?.header?.text || '';
+    const imageUrl = content?.header?.imageUrl || '/images/logo.png';
+
+    document.title = `Undangan Pernikahan Ria & Iqram - ${name}`;
+
+    const setMeta = (selector: string, attr: string, value: string) => {
+      let el = document.querySelector(selector) as HTMLMetaElement | null;
+      if (!el) {
+        el = document.createElement('meta');
+        if (selector.startsWith('meta[')) {
+          const parts = selector.match(/meta\[([^=]+)=["']([^"']+)["']\]/);
+          if (parts) {
+            el.setAttribute(parts[1], parts[2]);
+          }
+        }
+        document.head.appendChild(el);
+      }
+      el.setAttribute(attr, value);
+    };
+
+    setMeta('meta[name="description"]', 'content', `Undangan pernikahan Ria & Iqram untuk ${name}. ${text.slice(0, 120)}...`);
+    setMeta('meta[property="og:title"]', 'content', `Undangan Pernikahan Ria & Iqram - ${name}`);
+    setMeta('meta[property="og:description"]', 'content', `Kami mengundang ${name} untuk hadir di acara pernikahan Ria & Iqram.`);
+    setMeta('meta[property="og:image"]', 'content', imageUrl);
+    setMeta('meta[name="twitter:title"]', 'content', `Undangan Pernikahan Ria & Iqram - ${name}`);
+    setMeta('meta[name="twitter:description"]', 'content', `Kami mengundang ${name} untuk hadir di acara pernikahan Ria & Iqram.`);
+    setMeta('meta[name="twitter:image"]', 'content', imageUrl);
+  };
+
   const fetchInvitationData = async (code: string | null) => {
     setIsLoading(true);
     setErrorText(null);
     try {
       if (code) {
-        // Fetch customized guest details + updates read telemetry
         const response = await fetch(`/api/public/invitation/${code}`);
         if (response.ok) {
           const data = await response.json();
@@ -131,30 +161,28 @@ export default function App() {
           setContent(data.content);
           setSettings(data.settings);
           setHeaderPreload(data.content);
+          updateMetaTags(data.guest?.name || null, data.content);
         } else {
-          // Fallback to general public info if code doesn't exist
           const fallbackResp = await fetch('/api/public/content');
           const fallbackData = await fallbackResp.json();
           setContent(fallbackData.content);
           setSettings(fallbackData.settings);
-          // Standard placeholder comments
           const commentsResp = await fetch('/api/public/comments');
           const commentsData = await commentsResp.json();
           setComments(commentsData.comments || []);
           setErrorText('Kode undangan keliru atau khusus dibatasi oleh admin. Kami menampilkan pratinjau umum.');
+          updateMetaTags(null, fallbackData.content);
         }
       } else {
-        // No code specified. Load generic design data (e.g. general wedding preview page)
         const response = await fetch('/api/public/content');
         if (response.ok) {
           const data = await response.json();
           setContent(data.content);
           setSettings(data.settings);
-
-          // Comments
           const commentsResp = await fetch('/api/public/comments');
           const commentsData = await commentsResp.json();
           setComments(commentsData.comments || []);
+          updateMetaTags(null, data.content);
         } else {
           throw new Error('Gagal memuat konfigurasi utama server');
         }

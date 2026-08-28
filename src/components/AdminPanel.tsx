@@ -133,7 +133,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const getWhatsAppLink = (guest: Guest) => {
     if (!appSettings) return '';
     const origin = window.location.origin;
-    const inviteLink = `${origin}?code=${guest.code}`;
+    const inviteLink = `${origin}/i/${guest.code}`;
     
     let text = appSettings.generalOptions.whatsappGreetingTemplate;
     text = text.replace('{nama_tamu}', guest.name);
@@ -147,7 +147,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const handleCopyWaMessage = (guest: Guest) => {
     if (!appSettings) return;
     const origin = window.location.origin;
-    const inviteLink = `${origin}?code=${guest.code}`;
+    const inviteLink = `${origin}/i/${guest.code}`;
     
     let text = appSettings.generalOptions.whatsappGreetingTemplate;
     text = text.replace('{nama_tamu}', guest.name);
@@ -459,7 +459,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     
     guests.forEach(g => {
       const origin = window.location.origin;
-      const inviteUrl = `${origin}?code=${g.code}`;
+      const inviteUrl = `${origin}/i/${g.code}`;
       const line = `"${g.name}","${g.code}","${g.category}","${g.whatsapp}","${g.status}",${g.guest_count},${g.opened_count},"${inviteUrl}"`;
       csvContent += line + '\n';
     });
@@ -746,7 +746,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                       ) : (
                         filteredGuests.map((g) => {
                           const isEditing = editingGuestId === g.id;
-                          const guestInviteUrl = `${window.location.origin}?code=${g.code}`;
+                          const guestInviteUrl = `${window.location.origin}/i/${g.code}`;
                           
                           return (
                             <tr key={g.id} className="hover:bg-stone-850/30 transition-colors">
