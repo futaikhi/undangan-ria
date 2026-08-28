@@ -85,6 +85,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     setContentForm(JSON.parse(JSON.stringify(content)));
   };
 
+  const generateIsoDate = (dateStr: string, timeStr: string): string => {
+    const months: Record<string, string> = {
+      januari: '01', februari: '02', maret: '03', april: '04', mei: '05', juni: '06',
+      juli: '07', agustus: '08', september: '09', oktober: '10', november: '11', desember: '12'
+    };
+
+    const dateMatch = dateStr.match(/(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})/i);
+    if (!dateMatch) return '';
+
+    const day = dateMatch[1].padStart(2, '0');
+    const monthName = dateMatch[2].toLowerCase();
+    const month = months[monthName] || '01';
+    const year = dateMatch[3];
+
+    const timeOnly = timeStr.split('-')[0].trim();
+    const timeMatch = timeOnly.match(/(\d{1,2}:\d{2})/);
+    const time = timeMatch ? timeMatch[1] : '00:00';
+
+    return `${year}-${month}-${day}T${time}:00+07:00`;
+  };
+
   // Fetch all dashboard requirements
   const loadDashboardData = async () => {
     setIsLoading(true);
@@ -1212,11 +1233,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                             </div>
                             <div>
                               <label className="block text-[10px] uppercase text-stone-400 mb-1">Tanggal</label>
-                              <input value={evt.date} onChange={(e) => setContentForm({ ...contentForm, events: { ...contentForm.events, [evtKey]: { ...evt, date: e.target.value } } })} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                              <input value={evt.date} onChange={(e) => setContentForm({ ...contentForm, events: { ...contentForm.events, [evtKey]: { ...evt, date: e.target.value, isoDate: generateIsoDate(e.target.value, evt.time) } } })} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
                             </div>
                             <div>
                               <label className="block text-[10px] uppercase text-stone-400 mb-1">Waktu</label>
-                              <input value={evt.time} onChange={(e) => setContentForm({ ...contentForm, events: { ...contentForm.events, [evtKey]: { ...evt, time: e.target.value } } })} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                              <input value={evt.time} onChange={(e) => setContentForm({ ...contentForm, events: { ...contentForm.events, [evtKey]: { ...evt, time: e.target.value, isoDate: generateIsoDate(evt.date, e.target.value) } } })} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-[10px] uppercase text-stone-400 mb-1">ISO Date (otomatis)</label>
+                              <input value={evt.isoDate} readOnly className="w-full bg-stone-950 border border-stone-800 rounded-xl p-2.5 text-xs text-stone-400 font-mono cursor-not-allowed" />
                             </div>
                             <div className="md:col-span-2">
                               <label className="block text-[10px] uppercase text-stone-400 mb-1">Lokasi</label>
