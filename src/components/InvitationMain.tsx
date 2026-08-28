@@ -70,7 +70,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
         {/* Large background couple photo (Parallax effect) */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-45 mix-blend-overlay z-0" 
-          style={{ backgroundImage: `url(${content.gallery[2].url})` }}
+          style={{ backgroundImage: `url(${content.header.imageUrl})` }}
         ></div>
 
         <CornerOrnament className="absolute top-4 left-4 text-gold-shine opacity-50 z-10" />
@@ -94,7 +94,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
 
           {/* Sincere welcoming text */}
           <p className="font-serif italic text-sm md:text-base text-stone-200 px-6 max-w-xl leading-relaxed mt-2 mb-8">
-            {content.quote.text}
+            {content.header.text}
           </p>
 
           {/* COUNTDOWN TILES */}

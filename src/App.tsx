@@ -110,7 +110,7 @@ export default function App() {
 
     link.rel = "preload";
     link.as = "image";
-    link.href = content.gallery[2].url;
+    link.href = content.header.imageUrl;
     link.fetchPriority = "high";
 
     document.head.appendChild(link);

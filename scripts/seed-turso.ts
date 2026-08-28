@@ -27,10 +27,11 @@ const defaultContent = {
     photo: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=600',
     instagram: '@rainandaa_'
   },
-  quote: {
+  header: {
     text: '“Pada akhirnya, cinta bukan tentang menemukan seseorang yang sempurna, tetapi tentang menemukan seseorang yang ingin kita temui, lagi dan lagi, di setiap versi kehidupan. After all the little moments, the laughter, the growing, and the choosing — here we are. Dengan penuh syukur, kami melangkah menuju satu perjalanan baru, membawa cinta yang sederhana, doa yang panjang, dan harapan untuk tumbuh bersama, selamanya.”',
     translation: '',
-    source: ''
+    source: '',
+    imageUrl: ''
   },
   events: {
     akad: {

@@ -1,6 +1,8 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
+import path from 'path';
+import fs from 'fs';
 import {
   db,
   readContent,
@@ -10,7 +12,11 @@ import {
   bootstrapData
 } from '../db.js';
 
-await bootstrapData();
+try {
+  await bootstrapData();
+} catch (err) {
+  console.error('Failed to bootstrap database:', err);
+}
 
 const app = express();
 
@@ -19,6 +25,8 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'adminria2026';
 
 app.use(express.json());
 app.use(cookieParser());
+
+const uploadDir = path.join(process.cwd(), 'public', 'images');
 
 app.use((req, res, next) => {
   res.setHeader('X-Frame-Options', 'DENY');
@@ -233,6 +241,29 @@ app.get('/api/admin-undangan-ria-iqram/verify', (req, res) => {
     return res.json({ authenticated: false });
   } catch {
     res.json({ authenticated: false });
+  }
+});
+
+app.get('/api/admin-undangan-ria-iqram/images', authenticateAdmin, (req, res) => {
+  try {
+    let images: { name: string; url: string }[] = [];
+
+    if (fs.existsSync(uploadDir)) {
+      const files = fs.readdirSync(uploadDir).filter((file) => {
+        const ext = path.extname(file).toLowerCase();
+        return ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext);
+      });
+
+      images = files.map((file) => {
+        const url = `/images/${file}`;
+        return { name: file, url };
+      });
+    }
+
+    res.json({ success: true, images });
+  } catch (err: any) {
+    console.error('Failed to load images:', err);
+    res.status(500).json({ error: 'Gagal memuat galeri gambar: ' + err.message });
   }
 });
 
@@ -453,7 +484,7 @@ app.put('/api/admin-undangan-ria-iqram/settings', authenticateAdmin, async (req,
 app.put('/api/admin-undangan-ria-iqram/content', authenticateAdmin, async (req, res) => {
   try {
     await writeContent(req.body);
-    addAuditLog('CONTENT_UPDATED', 'Detail pengantin, quote, dan rundown acara diperbarui');
+    addAuditLog('CONTENT_UPDATED', 'Detail pengantin, header, dan rundown acara diperbarui');
     res.json({ success: true, message: 'Detail acara berhasil disimpan!' });
   } catch (err: any) {
     res.status(500).json({ error: 'Gagal menyimpan konten: ' + err.message });

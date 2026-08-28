@@ -30,10 +30,11 @@ export interface BrideGroom {
   instagram: string;
 }
 
-export interface Quote {
+export interface Header {
   text: string;
   translation: string;
   source: string;
+  imageUrl: string;
 }
 
 export interface EventDetails {
@@ -75,7 +76,7 @@ export interface GalleryItem {
 export interface Content {
   bride: BrideGroom;
   groom: BrideGroom;
-  quote: Quote;
+  header: Header;
   events: Events;
   story: StoryItem[];
   gifts: GiftItem[];

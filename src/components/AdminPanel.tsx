@@ -67,13 +67,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const [excelFileName, setExcelFileName] = useState('');
   const [isImportingExcel, setIsImportingExcel] = useState(false);
 
+  // Image picker state
+  const [images, setImages] = useState<{ name: string; url: string }[]>([]);
+  const [showImagePicker, setShowImagePicker] = useState(false);
+  const [imagePickerTarget, setImagePickerTarget] = useState<{ type: 'bride' | 'groom' | 'header' | 'gallery'; index?: number } | null>(null);
+
   // Editing modes
   const [editingGuestId, setEditingGuestId] = useState<number | null>(null);
   const [editGuestForm, setEditGuestForm] = useState<Partial<Guest>>({});
 
   // Content edit state representation
-  const [editContentText, setEditContentText] = useState<string>('');
+  const [contentForm, setContentForm] = useState<Content | null>(null);
+  const [contentSubTab, setContentSubTab] = useState<'bride' | 'header' | 'events' | 'story' | 'gifts' | 'gallery'>('bride');
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+
+  const syncFormFromContent = (content: Content) => {
+    setContentForm(JSON.parse(JSON.stringify(content)));
+  };
 
   // Fetch all dashboard requirements
   const loadDashboardData = async () => {
@@ -106,7 +116,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
       const configData = await configResp.json();
       setAppContent(configData.content);
       setAppSettings(configData.settings);
-      setEditContentText(JSON.stringify(configData.content, null, 2));
+      syncFormFromContent(configData.content);
 
     } catch (err: any) {
       setErrorMsg(err.message || 'Gagal memuat dashboard');
@@ -233,7 +243,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
-        const data = evt.target?.result;
+        const data = evt.target?.result || "";
         const workbook = XLSX.read(data, { type: 'binary' });
         const firstSheet = workbook.SheetNames[0];
         const sheet = workbook.Sheets[firstSheet];
@@ -281,6 +291,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     } finally {
       setIsImportingExcel(false);
     }
+  };
+
+  const openImagePicker = async (type: 'bride' | 'groom' | 'header' | 'gallery', index?: number) => {
+    setImagePickerTarget({ type, index });
+    setShowImagePicker(true);
+    try {
+      const resp = await fetch('/api/admin-undangan-ria-iqram/images');
+      const data = await resp.json();
+      if (data.success) {
+        setImages(data.images || []);
+      } else {
+        alert('Gagal memuat galeri gambar: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err: any) {
+      alert('Gagal memuat galeri gambar: ' + (err.message || 'Network error'));
+    }
+  };
+
+  const selectImage = (url: string) => {
+    if (!contentForm || !imagePickerTarget) return;
+    const { type, index } = imagePickerTarget;
+    if (type === 'bride') {
+      setContentForm({ ...contentForm, bride: { ...contentForm.bride, photo: url } });
+    } else if (type === 'groom') {
+      setContentForm({ ...contentForm, groom: { ...contentForm.groom, photo: url } });
+    } else if (type === 'header') {
+      setContentForm({ ...contentForm, header: { ...contentForm.header, imageUrl: url } });
+    } else if (type === 'gallery' && typeof index === 'number') {
+      const next = [...contentForm.gallery];
+      next[index] = { ...next[index], url };
+      setContentForm({ ...contentForm, gallery: next });
+    }
+    setShowImagePicker(false);
+    setImagePickerTarget(null);
   };
 
   // Toggle Guest status
@@ -371,11 +415,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const handleSaveContent = async () => {
     setSaveStatus('Menyimpan...');
     try {
-      const parsed = JSON.parse(editContentText);
+      if (!contentForm) throw new Error('Data konten belum dimuat');
       const resp = await fetch('/api/admin-undangan-ria-iqram/content', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(parsed)
+        body: JSON.stringify(contentForm)
       });
       if (resp.ok) {
         setSaveStatus('Berhasil disimpan!');
@@ -1046,55 +1090,269 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                          {isImportingBulk ? 'Memproses...' : 'Impor Daftar Tamu'}
                        </button>
                      </div>
-                   </form>
+                     </form>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+          )}
 
-          </div>
-        )}
-
-        {/* TAB 4.2 CONTENT & METADATA CONFIG EDITOR */}
+          {/* TAB 4.2 CONTENT & METADATA CONFIG EDITOR */}
         {activeTab === 'content' && (
           <div className="bg-stone-900 border border-stone-800 rounded-2xl p-6 shadow">
-            <h3 className="font-serif text-lg font-bold text-white-gentle tracking-wide mb-2">Edit Konten Halaman Web Pernikahan</h3>
-            <p className="text-xs text-white mb-6 font-sans leading-normal">
-              Acuan di bawah ini adalah manifest utama (JSON) yang berisikan rincian nama pengantin, quotes adat, data kado rekening bank, rundown acara, hingga gambar prewedding di galeri. Modifikasi data di dalam blok valid JSON di bawah ini, lalu klik Simpan.
-            </p>
+            <h3 className="font-serif text-lg font-bold text-white-gentle tracking-wide mb-4">Edit Konten Halaman Web Pernikahan</h3>
 
-            <textarea
-              rows={22}
-              value={editContentText}
-              onChange={(e) => setEditContentText(e.target.value)}
-              className="w-full bg-stone-950 border border-stone-800 focus:border-gold-gentle focus:outline-none rounded-2xl p-4 text-xs font-mono text-emerald-400"
-            />
+            {!contentForm ? (
+              <p className="text-xs text-stone-400">Memuat data konten...</p>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-2 mb-6 border-b border-stone-800 pb-3">
+                  {[
+                    { id: 'bride', label: 'Info Pengantin' },
+                    { id: 'header', label: 'Header' },
+                    { id: 'events', label: 'Acara' },
+                    { id: 'story', label: 'Cerita' },
+                    { id: 'gifts', label: 'Kado' },
+                    { id: 'gallery', label: 'Galeri' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setContentSubTab(tab.id as any)}
+                      className={`px-3 py-1.5 text-[11px] uppercase tracking-widest font-semibold rounded-lg cursor-pointer border transition-colors ${
+                        contentSubTab === tab.id
+                          ? 'border-gold-gentle text-white bg-stone-900'
+                          : 'border-transparent text-white hover:text-white hover:bg-stone-900'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
 
-            {saveStatus && (
-              <div className="mt-4 p-3 rounded-lg text-xs bg-stone-950 border border-stone-800 text-white-gentle font-mono">
-                {saveStatus}
-              </div>
+                {/* BRIDE & GROOM */}
+                {contentSubTab === 'bride' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {['bride', 'groom'].map((key) => {
+                      const person = key === 'bride' ? 'Mempelai Wanita' : 'Mempelai Pria';
+                      const data = contentForm[key as keyof Content] as any;
+                      return (
+                        <div key={key} className="bg-stone-950 border border-stone-800 rounded-2xl p-5">
+                          <h4 className="text-xs uppercase tracking-widest text-white-gentle font-bold mb-4">{person}</h4>
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-[10px] uppercase text-stone-400 mb-1">Nama Panggilan</label>
+                              <input value={data.nickname} onChange={(e) => setContentForm({ ...contentForm, [key]: { ...data, nickname: e.target.value } } as Content)} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] uppercase text-stone-400 mb-1">Nama Lengkap</label>
+                              <input value={data.fullname} onChange={(e) => setContentForm({ ...contentForm, [key]: { ...data, fullname: e.target.value } } as Content)} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] uppercase text-stone-400 mb-1">Nama Ayah</label>
+                              <input value={data.father} onChange={(e) => setContentForm({ ...contentForm, [key]: { ...data, father: e.target.value } } as Content)} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] uppercase text-stone-400 mb-1">Nama Ibu</label>
+                              <input value={data.mother} onChange={(e) => setContentForm({ ...contentForm, [key]: { ...data, mother: e.target.value } } as Content)} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] uppercase text-stone-400 mb-1">URL Foto</label>
+                              <input value={data.photo} onChange={(e) => setContentForm({ ...contentForm, [key]: { ...data, photo: e.target.value } } as Content)} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                              <button type="button" onClick={() => openImagePicker(key as 'bride' | 'groom')} className="mt-2 text-[10px] text-gold-gentle hover:text-white uppercase font-bold">Pilih dari Galeri</button>
+                            </div>
+                            <div>
+                              <label className="block text-[10px] uppercase text-stone-400 mb-1">Instagram</label>
+                              <input value={data.instagram} onChange={(e) => setContentForm({ ...contentForm, [key]: { ...data, instagram: e.target.value } } as Content)} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* HEADER */}
+                {contentSubTab === 'header' && (
+                  <div className="bg-stone-950 border border-stone-800 rounded-2xl p-5 max-w-3xl">
+                    <h4 className="text-xs uppercase tracking-widest text-white-gentle font-bold mb-4">Header</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[10px] uppercase text-stone-400 mb-1">Teks Header</label>
+                        <textarea rows={4} value={contentForm.header.text} onChange={(e) => setContentForm({ ...contentForm, header: { ...contentForm.header, text: e.target.value } })} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-3 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase text-stone-400 mb-1">Terjemahan</label>
+                        <textarea rows={2} value={contentForm.header.translation} onChange={(e) => setContentForm({ ...contentForm, header: { ...contentForm.header, translation: e.target.value } })} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-3 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase text-stone-400 mb-1">Sumber</label>
+                        <input value={contentForm.header.source} onChange={(e) => setContentForm({ ...contentForm, header: { ...contentForm.header, source: e.target.value } })} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase text-stone-400 mb-1">URL Gambar Header</label>
+                        <input value={contentForm.header.imageUrl} onChange={(e) => setContentForm({ ...contentForm, header: { ...contentForm.header, imageUrl: e.target.value } })} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                        <button type="button" onClick={() => openImagePicker('header')} className="mt-2 text-[10px] text-gold-gentle hover:text-white uppercase font-bold">Pilih dari Galeri</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* EVENTS */}
+                {contentSubTab === 'events' && (
+                  <div className="space-y-4">
+                    {['akad', 'praresepsi', 'resepsi'].map((evtKey) => {
+                      const evt = contentForm.events[evtKey as keyof typeof contentForm.events];
+                      return (
+                        <div key={evtKey} className="bg-stone-950 border border-stone-800 rounded-2xl p-5">
+                          <h4 className="text-xs uppercase tracking-widest text-white-gentle font-bold mb-4">{evt.title}</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="md:col-span-2">
+                              <label className="block text-[10px] uppercase text-stone-400 mb-1">Judul Acara</label>
+                              <input value={evt.title} onChange={(e) => setContentForm({ ...contentForm, events: { ...contentForm.events, [evtKey]: { ...evt, title: e.target.value } } })} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] uppercase text-stone-400 mb-1">Tanggal</label>
+                              <input value={evt.date} onChange={(e) => setContentForm({ ...contentForm, events: { ...contentForm.events, [evtKey]: { ...evt, date: e.target.value } } })} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] uppercase text-stone-400 mb-1">Waktu</label>
+                              <input value={evt.time} onChange={(e) => setContentForm({ ...contentForm, events: { ...contentForm.events, [evtKey]: { ...evt, time: e.target.value } } })} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-[10px] uppercase text-stone-400 mb-1">Lokasi</label>
+                              <input value={evt.location} onChange={(e) => setContentForm({ ...contentForm, events: { ...contentForm.events, [evtKey]: { ...evt, location: e.target.value } } })} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-[10px] uppercase text-stone-400 mb-1">Alamat</label>
+                              <textarea rows={2} value={evt.address} onChange={(e) => setContentForm({ ...contentForm, events: { ...contentForm.events, [evtKey]: { ...evt, address: e.target.value } } })} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-3 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-[10px] uppercase text-stone-400 mb-1">Link Maps</label>
+                              <input value={evt.mapsUrl} onChange={(e) => setContentForm({ ...contentForm, events: { ...contentForm.events, [evtKey]: { ...evt, mapsUrl: e.target.value } } })} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* STORY */}
+                {contentSubTab === 'story' && (
+                  <div className="space-y-3">
+                    {contentForm.story.map((item, idx) => (
+                      <div key={item.id} className="bg-stone-950 border border-stone-800 rounded-2xl p-5">
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="text-xs uppercase tracking-widest text-white-gentle font-bold">Cerita #{idx + 1}</h4>
+                          <button onClick={() => { const next = contentForm.story.filter((_, i) => i !== idx); setContentForm({ ...contentForm, story: next }); }} className="text-[10px] text-red-400 hover:text-red-300 uppercase font-bold">Hapus</button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[10px] uppercase text-stone-400 mb-1">Tahun</label>
+                            <input value={item.year} onChange={(e) => { const next = [...contentForm.story]; next[idx] = { ...item, year: e.target.value }; setContentForm({ ...contentForm, story: next }); }} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase text-stone-400 mb-1">Judul</label>
+                            <input value={item.title} onChange={(e) => { const next = [...contentForm.story]; next[idx] = { ...item, title: e.target.value }; setContentForm({ ...contentForm, story: next }); }} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-[10px] uppercase text-stone-400 mb-1">Isi Cerita</label>
+                            <textarea rows={3} value={item.content} onChange={(e) => { const next = [...contentForm.story]; next[idx] = { ...item, content: e.target.value }; setContentForm({ ...contentForm, story: next }); }} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-3 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <button onClick={() => setContentForm({ ...contentForm, story: [...contentForm.story, { id: Date.now(), year: '', title: '', content: '' }] })} className="w-full py-2 border border-dashed border-stone-700 rounded-xl text-xs text-stone-400 hover:text-white hover:border-gold-gentle cursor-pointer">+ Tambah Cerita</button>
+                  </div>
+                )}
+
+                {/* GIFTS */}
+                {contentSubTab === 'gifts' && (
+                  <div className="space-y-3">
+                    {contentForm.gifts.map((item, idx) => (
+                      <div key={idx} className="bg-stone-950 border border-stone-800 rounded-2xl p-5">
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="text-xs uppercase tracking-widest text-white-gentle font-bold">Kado #{idx + 1}</h4>
+                          <button onClick={() => { const next = contentForm.gifts.filter((_, i) => i !== idx); setContentForm({ ...contentForm, gifts: next }); }} className="text-[10px] text-red-400 hover:text-red-300 uppercase font-bold">Hapus</button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[10px] uppercase text-stone-400 mb-1">Bank / Provider</label>
+                            <input value={item.provider} onChange={(e) => { const next = [...contentForm.gifts]; next[idx] = { ...item, provider: e.target.value }; setContentForm({ ...contentForm, gifts: next }); }} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase text-stone-400 mb-1">Nomor Rekening</label>
+                            <input value={item.accountNumber} onChange={(e) => { const next = [...contentForm.gifts]; next[idx] = { ...item, accountNumber: e.target.value }; setContentForm({ ...contentForm, gifts: next }); }} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase text-stone-400 mb-1">Atas Nama</label>
+                            <input value={item.holder} onChange={(e) => { const next = [...contentForm.gifts]; next[idx] = { ...item, holder: e.target.value }; setContentForm({ ...contentForm, gifts: next }); }} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase text-stone-400 mb-1">Icon</label>
+                            <input value={item.icon} onChange={(e) => { const next = [...contentForm.gifts]; next[idx] = { ...item, icon: e.target.value }; setContentForm({ ...contentForm, gifts: next }); }} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <button onClick={() => setContentForm({ ...contentForm, gifts: [...contentForm.gifts, { provider: '', accountNumber: '', holder: '', icon: 'CreditCard' }] })} className="w-full py-2 border border-dashed border-stone-700 rounded-xl text-xs text-stone-400 hover:text-white hover:border-gold-gentle cursor-pointer">+ Tambah Rekening</button>
+                  </div>
+                )}
+
+                {/* GALLERY */}
+                {contentSubTab === 'gallery' && (
+                  <div className="space-y-3">
+                    {contentForm.gallery.map((item, idx) => (
+                      <div key={item.id} className="bg-stone-950 border border-stone-800 rounded-2xl p-5">
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="text-xs uppercase tracking-widest text-white-gentle font-bold">Galeri #{idx + 1}</h4>
+                          <button onClick={() => { const next = contentForm.gallery.filter((_, i) => i !== idx); setContentForm({ ...contentForm, gallery: next }); }} className="text-[10px] text-red-400 hover:text-red-300 uppercase font-bold">Hapus</button>
+                        </div>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-[10px] uppercase text-stone-400 mb-1">URL Gambar</label>
+                            <input value={item.url} onChange={(e) => { const next = [...contentForm.gallery]; next[idx] = { ...item, url: e.target.value }; setContentForm({ ...contentForm, gallery: next }); }} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                            <button type="button" onClick={() => openImagePicker('gallery', idx)} className="mt-2 text-[10px] text-gold-gentle hover:text-white uppercase font-bold">Pilih dari Galeri</button>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase text-stone-400 mb-1">Caption</label>
+                            <input value={item.caption} onChange={(e) => { const next = [...contentForm.gallery]; next[idx] = { ...item, caption: e.target.value }; setContentForm({ ...contentForm, gallery: next }); }} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <button onClick={() => setContentForm({ ...contentForm, gallery: [...contentForm.gallery, { id: `g${Date.now()}`, url: '', caption: '' }] })} className="w-full py-2 border border-dashed border-stone-700 rounded-xl text-xs text-stone-400 hover:text-white hover:border-gold-gentle cursor-pointer">+ Tambah Foto</button>
+                  </div>
+                )}
+
+                {saveStatus && (
+                  <div className="mt-6 p-3 rounded-lg text-xs bg-stone-950 border border-stone-800 text-white-gentle font-mono">
+                    {saveStatus}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    onClick={() => {
+                      if (appContent) {
+                        syncFormFromContent(appContent);
+                        setSaveStatus('Format dibatalkan ke asal');
+                        setTimeout(() => setSaveStatus(null), 1500);
+                      }
+                    }}
+                    className="px-4 py-2 border border-stone-800 rounded-lg text-xs text-white hover:text-white cursor-pointer"
+                  >
+                    Reset Perubahan
+                  </button>
+                  <button
+                    onClick={handleSaveContent}
+                    className="px-6 py-2.5 bg-batik-brown text-white border border-gold-gentle font-bold text-xs uppercase tracking-widest rounded-lg cursor-pointer"
+                  >
+                    Simpan Perubahan
+                  </button>
+                </div>
+              </>
             )}
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => {
-                  if (appContent) {
-                    setEditContentText(JSON.stringify(appContent, null, 2));
-                    setSaveStatus('Format dibatalkan ke asal');
-                    setTimeout(() => setSaveStatus(null), 1500);
-                  }
-                }}
-                className="px-4 py-2 border border-stone-800 rounded-lg text-xs text-white hover:text-white cursor-pointer"
-              >
-                Reset Perubahan
-              </button>
-              <button
-                onClick={handleSaveContent}
-                className="px-6 py-2.5 bg-batik-brown text-white border border-gold-gentle font-bold text-xs uppercase tracking-widest rounded-lg cursor-pointer"
-              >
-                Simpan Perubahan
-              </button>
-            </div>
           </div>
         )}
 
@@ -1197,6 +1455,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                   </div>
                 ))
               )}
+             </div>
+          </div>
+        )}
+
+        {/* IMAGE PICKER MODAL */}
+        {showImagePicker && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[1002]">
+            <div className="bg-stone-900 border border-stone-800 rounded-3xl p-6 md:p-8 max-w-3xl w-full text-left relative shadow-2xl max-h-[90vh] flex flex-col">
+              <button
+                onClick={() => { setShowImagePicker(false); setImagePickerTarget(null); }}
+                className="absolute top-4 right-4 text-white hover:text-white font-bold text-2xl cursor-pointer"
+              >
+                ×
+              </button>
+
+              <h3 className="font-serif text-lg font-bold text-white-gentle tracking-wide mb-2">Pilih Gambar</h3>
+              <p className="text-xs text-white font-sans leading-normal mb-4">
+                Pilih gambar dari folder <span className="font-mono text-gold-gentle">/public/images</span> untuk digunakan sebagai foto pengantin atau galeri.
+              </p>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto p-1">
+                {images.map((img) => (
+                  <button
+                    key={img.name}
+                    onClick={() => selectImage(img.url)}
+                    className="border border-stone-800 rounded-xl overflow-hidden hover:border-gold-gentle transition-colors cursor-pointer bg-stone-950"
+                  >
+                    <img src={img.url} alt={img.name} className="w-full h-24 object-cover" />
+                    <div className="p-2 text-[10px] text-stone-400 truncate font-mono">{img.name}</div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}

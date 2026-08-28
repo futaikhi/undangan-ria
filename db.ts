@@ -37,10 +37,11 @@ const defaultContent = {
     photo: 'https://i.ibb.co.com/QFfqVmYf/HFZ-8388.webp',
     instagram: '@rainandaa_'
   },
-  quote: {
+  header: {
     text: '“Pada akhirnya, cinta bukan tentang menemukan seseorang yang sempurna, tetapi tentang menemukan seseorang yang ingin kita temui, lagi dan lagi, di setiap versi kehidupan. After all the little moments, the laughter, the growing, and the choosing — here we are. Dengan penuh syukur, kami melangkah menuju satu perjalanan baru, membawa cinta yang sederhana, doa yang panjang, dan harapan untuk tumbuh bersama, selamanya.”',
     translation: '',
-    source: ''
+    source: '',
+    imageUrl: ''
   },
   events: {
     akad: {
@@ -210,6 +211,16 @@ export async function bootstrapData() {
 
   await getKV('content', defaultContent);
   await getKV('settings', defaultSettings);
+
+  const contentRs = await db.execute({ sql: 'SELECT value FROM app_kv WHERE key = ?', args: ['content'] });
+  if (contentRs.rows.length > 0) {
+    const content = JSON.parse(contentRs.rows[0].value as string);
+    if (content.quote && !content.header) {
+      const migrated = { ...content, header: { ...content.quote, imageUrl: '' } };
+      delete migrated.quote;
+      await db.execute({ sql: 'INSERT OR REPLACE INTO app_kv (key, value) VALUES (?, ?)', args: ['content', JSON.stringify(migrated)] });
+    }
+  }
 }
 
 export async function readContent() {
