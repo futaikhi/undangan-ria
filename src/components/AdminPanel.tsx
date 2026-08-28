@@ -1158,7 +1158,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                             <div>
                               <label className="block text-[10px] uppercase text-stone-400 mb-1">URL Foto</label>
                               <input value={data.photo} onChange={(e) => setContentForm({ ...contentForm, [key]: { ...data, photo: e.target.value } } as Content)} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
-                              <button type="button" onClick={() => openImagePicker(key as 'bride' | 'groom')} className="mt-2 text-[10px] text-gold-gentle hover:text-white uppercase font-bold">Pilih dari Galeri</button>
+                              <button type="button" onClick={() => openImagePicker(key as 'bride' | 'groom')} className="mt-2 text-[10px] text-gold-gentle hover:text-white uppercase font-bold cursor-pointer">Pilih dari Galeri</button>
                             </div>
                             <div>
                               <label className="block text-[10px] uppercase text-stone-400 mb-1">Instagram</label>
@@ -1191,7 +1191,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                       <div>
                         <label className="block text-[10px] uppercase text-stone-400 mb-1">URL Gambar Header</label>
                         <input value={contentForm.header.imageUrl} onChange={(e) => setContentForm({ ...contentForm, header: { ...contentForm.header, imageUrl: e.target.value } })} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
-                        <button type="button" onClick={() => openImagePicker('header')} className="mt-2 text-[10px] text-gold-gentle hover:text-white uppercase font-bold">Pilih dari Galeri</button>
+                        <button type="button" onClick={() => openImagePicker('header')} className="mt-2 text-[10px] text-gold-gentle hover:text-white uppercase font-bold cursor-pointer">Pilih dari Galeri</button>
                       </div>
                     </div>
                   </div>
@@ -1312,7 +1312,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                           <div>
                             <label className="block text-[10px] uppercase text-stone-400 mb-1">URL Gambar</label>
                             <input value={item.url} onChange={(e) => { const next = [...contentForm.gallery]; next[idx] = { ...item, url: e.target.value }; setContentForm({ ...contentForm, gallery: next }); }} className="w-full bg-stone-900 border border-stone-800 rounded-xl p-2.5 text-xs text-white focus:border-gold-gentle focus:outline-none" />
-                            <button type="button" onClick={() => openImagePicker('gallery', idx)} className="mt-2 text-[10px] text-gold-gentle hover:text-white uppercase font-bold">Pilih dari Galeri</button>
+                            <button type="button" onClick={() => openImagePicker('gallery', idx)} className="mt-2 text-[10px] text-gold-gentle hover:text-white uppercase font-bold cursor-pointer">Pilih dari Galeri</button>
                           </div>
                           <div>
                             <label className="block text-[10px] uppercase text-stone-400 mb-1">Caption</label>
