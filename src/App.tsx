@@ -120,7 +120,7 @@ export default function App() {
   const updateMetaTags = (guestName: string | null, content: Content | null) => {
     const name = guestName || 'Tamu Undangan';
     const text = content?.header?.text || '';
-    const imageUrl = '/images/logo.png';
+    let imageUrl = content?.header?.imageUrl || '/images/logo.png';
 
     document.title = `Undangan Pernikahan Ria & Iqram - ${name}`;
 
@@ -147,6 +147,12 @@ export default function App() {
     setMeta('meta[name="twitter:description"]', 'content', `Kami mengundang ${name} untuk hadir di acara pernikahan Ria & Iqram.`);
     setMeta('meta[name="twitter:image"]', 'content', imageUrl);
   };
+
+  useEffect(() => {
+    if (content && !isAdmin) {
+      updateMetaTags(guest?.name || null, content);
+    }
+  }, [content, guest, isAdmin]);
 
   const fetchInvitationData = async (code: string | null) => {
     setIsLoading(true);
