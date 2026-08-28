@@ -38,7 +38,7 @@ export default function App() {
       const pathname = window.location.pathname;
 
       // 1. Check if URL specifies Administrative pathways
-      if (pathname === '/admin' || searchParams.get('admin') === 'true') {
+      if (pathname === '/admin-undangan-ria-iqram' || searchParams.get('admin') === 'true') {
         setIsAdmin(true);
         checkAdminSession();
         return;
@@ -73,17 +73,37 @@ export default function App() {
   const checkAdminSession = async () => {
     setIsLoading(true);
     try {
-      const resp = await fetch('/api/admin/verify');
+      const resp = await fetch('/api/admin-undangan-ria-iqram/verify');
       const data = await resp.json();
       if (data.authenticated) {
         setAdminAuthenticated(true);
+      } else {
+        setAdminAuthenticated(false);
       }
     } catch {
-      // Ignore
+      setAdminAuthenticated(false);
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!isAdmin || !adminAuthenticated) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const resp = await fetch('/api/admin-undangan-ria-iqram/verify');
+        const data = await resp.json();
+        if (!data.authenticated) {
+          setAdminAuthenticated(false);
+        }
+      } catch {
+        setAdminAuthenticated(false);
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [isAdmin, adminAuthenticated]);
 
   const setHeaderPreload = async (content: Content) => {
     const link = document.createElement("link");
@@ -154,7 +174,7 @@ export default function App() {
     setLoginError(null);
 
     try {
-      const resp = await fetch('/api/admin/login', {
+      const resp = await fetch('/api/admin-undangan-ria-iqram/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: adminPassword })
@@ -176,7 +196,7 @@ export default function App() {
   // Terminate admin session
   const handleAdminLogout = async () => {
     try {
-      await fetch('/api/admin/logout', { method: 'POST' });
+      await fetch('/api/admin-undangan-ria-iqram/logout', { method: 'POST' });
       setAdminAuthenticated(false);
     } catch {
       // Force locally anyway

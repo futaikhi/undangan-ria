@@ -81,21 +81,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     setErrorMsg(null);
     try {
       // Fetch stats
-      const statsResp = await fetch('/api/admin/stats');
+      const statsResp = await fetch('/api/admin-undangan-ria-iqram/stats');
       if (!statsResp.ok) throw new Error('Sesi tidak sah atau kedaluwarsa');
       const statsData = await statsResp.json();
       setStats(statsData);
       setAuditLogs(statsData.auditLogs || []);
 
       // Fetch guests
-      const guestsResp = await fetch('/api/admin/guests');
+      const guestsResp = await fetch('/api/admin-undangan-ria-iqram/guests');
       const guestsData = await guestsResp.json();
       if (guestsData.success) {
         setGuests(guestsData.guests);
       }
 
       // Fetch comments (all of them for moderation)
-      const commentsResp = await fetch('/api/admin/comments');
+      const commentsResp = await fetch('/api/admin-undangan-ria-iqram/comments');
       const commentsData = await commentsResp.json();
       if (commentsData.success) {
         setComments(commentsData.comments);
@@ -154,7 +154,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     if (!newGuest.name.trim()) return;
     setIsCreatingGuest(true);
     try {
-      const response = await fetch('/api/admin/guests', {
+      const response = await fetch('/api/admin-undangan-ria-iqram/guests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newGuest)
@@ -196,7 +196,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         return;
       }
 
-      const response = await fetch('/api/admin/guests/bulk', {
+      const response = await fetch('/api/admin-undangan-ria-iqram/guests/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ guests: parsedGuests })
@@ -261,7 +261,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     if (excelPreview.length === 0) return;
     setIsImportingExcel(true);
     try {
-      const response = await fetch('/api/admin/guests/bulk', {
+      const response = await fetch('/api/admin-undangan-ria-iqram/guests/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ guests: excelPreview })
@@ -287,7 +287,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const toggleGuestActive = async (guest: Guest) => {
     try {
       const updatedStatus = guest.status_active === 1 ? 0 : 1;
-      const resp = await fetch(`/api/admin/guests/${guest.id}`, {
+      const resp = await fetch(`/api/admin-undangan-ria-iqram/guests/${guest.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -306,7 +306,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   // Edit guest inline helper
   const saveGuestInline = async (id: number) => {
     try {
-      const resp = await fetch(`/api/admin/guests/${id}`, {
+      const resp = await fetch(`/api/admin-undangan-ria-iqram/guests/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editGuestForm)
@@ -328,7 +328,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const handleDeleteGuest = async (id: number, name: string) => {
     if (!confirm(`Apakah Anda yakin ingin menghapus undangan untuk: "${name}"?`)) return;
     try {
-      const resp = await fetch(`/api/admin/guests/${id}`, { method: 'DELETE' });
+      const resp = await fetch(`/api/admin-undangan-ria-iqram/guests/${id}`, { method: 'DELETE' });
       if (resp.ok) {
         loadDashboardData();
       }
@@ -341,7 +341,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const handleDeleteComment = async (id: number) => {
     if (!confirm('Apakah ucapan luhur ini ingin dihapus selamanya?')) return;
     try {
-      const resp = await fetch(`/api/admin/comments/${id}`, { method: 'DELETE' });
+      const resp = await fetch(`/api/admin-undangan-ria-iqram/comments/${id}`, { method: 'DELETE' });
       if (resp.ok) {
         loadDashboardData();
       }
@@ -354,7 +354,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const toggleCommentApproval = async (id: number, currentApproved: number) => {
     try {
       const updateVal = currentApproved === 1 ? false : true;
-      const resp = await fetch(`/api/admin/comments/${id}`, {
+      const resp = await fetch(`/api/admin-undangan-ria-iqram/comments/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_approved: updateVal })
@@ -372,7 +372,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     setSaveStatus('Menyimpan...');
     try {
       const parsed = JSON.parse(editContentText);
-      const resp = await fetch('/api/admin/content', {
+      const resp = await fetch('/api/admin-undangan-ria-iqram/content', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(parsed)
@@ -393,7 +393,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   // Live save individual settings like template Greeting WA
   const handleUpdateSettings = async (updatedSettings: AppSettings) => {
     try {
-      const resp = await fetch('/api/admin/settings', {
+      const resp = await fetch('/api/admin-undangan-ria-iqram/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedSettings)

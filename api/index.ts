@@ -201,7 +201,7 @@ app.get('/api/public/comments', async (req, res) => {
   }
 });
 
-app.post('/api/admin/login', rateLimiter(5, 60000), (req, res) => {
+app.post('/api/admin-undangan-ria-iqram/login', rateLimiter(5, 60000), (req, res) => {
   const { password } = req.body;
   if (!password) return res.status(400).json({ error: 'Kata sandi dibutuhkan' });
   if (password !== ADMIN_PASSWORD) {
@@ -219,12 +219,12 @@ app.post('/api/admin/login', rateLimiter(5, 60000), (req, res) => {
   res.json({ success: true, message: 'Masuk berhasil' });
 });
 
-app.post('/api/admin/logout', (req, res) => {
+app.post('/api/admin-undangan-ria-iqram/logout', (req, res) => {
   res.clearCookie('token');
   res.json({ success: true, message: 'Keluar berhasil' });
 });
 
-app.get('/api/admin/verify', (req, res) => {
+app.get('/api/admin-undangan-ria-iqram/verify', (req, res) => {
   const token = req.cookies.token;
   if (!token) return res.json({ authenticated: false });
   try {
@@ -236,7 +236,7 @@ app.get('/api/admin/verify', (req, res) => {
   }
 });
 
-app.get('/api/admin/stats', authenticateAdmin, async (req, res) => {
+app.get('/api/admin-undangan-ria-iqram/stats', authenticateAdmin, async (req, res) => {
   try {
     const totalsRs = await db.execute({ sql: 'SELECT COUNT(*) as total, SUM(opened_count) as total_opens FROM guests', args: [] });
     const totals = totalsRs.rows[0] as any;
@@ -283,7 +283,7 @@ app.get('/api/admin/stats', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.get('/api/admin/guests', authenticateAdmin, async (req, res) => {
+app.get('/api/admin-undangan-ria-iqram/guests', authenticateAdmin, async (req, res) => {
   try {
     const rs = await db.execute({ sql: 'SELECT * FROM guests ORDER BY id DESC', args: [] });
     res.json({ success: true, guests: rs.rows });
@@ -292,7 +292,7 @@ app.get('/api/admin/guests', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.post('/api/admin/guests', authenticateAdmin, async (req, res) => {
+app.post('/api/admin-undangan-ria-iqram/guests', authenticateAdmin, async (req, res) => {
   const { name, category, whatsapp } = req.body;
   if (!name || name.trim() === '') return res.status(400).json({ error: 'Nama tamu tidak boleh kosong' });
 
@@ -319,7 +319,7 @@ app.post('/api/admin/guests', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.post('/api/admin/guests/bulk', authenticateAdmin, async (req, res) => {
+app.post('/api/admin-undangan-ria-iqram/guests/bulk', authenticateAdmin, async (req, res) => {
   const { guests } = req.body;
   if (!Array.isArray(guests) || guests.length === 0) return res.status(400).json({ error: 'Data bulk tamu tidak valid atau kosong' });
 
@@ -358,7 +358,7 @@ app.post('/api/admin/guests/bulk', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.put('/api/admin/guests/:id', authenticateAdmin, async (req, res) => {
+app.put('/api/admin-undangan-ria-iqram/guests/:id', authenticateAdmin, async (req, res) => {
   const { id } = req.params;
   const { name, category, whatsapp, status, guest_count, status_active } = req.body;
 
@@ -383,7 +383,7 @@ app.put('/api/admin/guests/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.delete('/api/admin/guests/:id', authenticateAdmin, async (req, res) => {
+app.delete('/api/admin-undangan-ria-iqram/guests/:id', authenticateAdmin, async (req, res) => {
   const { id } = req.params;
   try {
     const gRs = await db.execute({ sql: 'SELECT name FROM guests WHERE id = ?', args: [id] });
@@ -400,7 +400,7 @@ app.delete('/api/admin/guests/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.get('/api/admin/comments', authenticateAdmin, async (req, res) => {
+app.get('/api/admin-undangan-ria-iqram/comments', authenticateAdmin, async (req, res) => {
   try {
     const rs = await db.execute({
       sql: `SELECT rc.id, rc.name, rc.comment, rc.is_approved, rc.created_at, g.code FROM rsvp_comments rc LEFT JOIN guests g ON rc.guest_id = g.id ORDER BY rc.id DESC`,
@@ -412,7 +412,7 @@ app.get('/api/admin/comments', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.put('/api/admin/comments/:id', authenticateAdmin, async (req, res) => {
+app.put('/api/admin-undangan-ria-iqram/comments/:id', authenticateAdmin, async (req, res) => {
   const { id } = req.params;
   const { is_approved } = req.body;
   try {
@@ -427,7 +427,7 @@ app.put('/api/admin/comments/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.delete('/api/admin/comments/:id', authenticateAdmin, async (req, res) => {
+app.delete('/api/admin-undangan-ria-iqram/comments/:id', authenticateAdmin, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await db.execute({ sql: 'DELETE FROM rsvp_comments WHERE id = ?', args: [id] });
@@ -440,7 +440,7 @@ app.delete('/api/admin/comments/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.put('/api/admin/settings', authenticateAdmin, async (req, res) => {
+app.put('/api/admin-undangan-ria-iqram/settings', authenticateAdmin, async (req, res) => {
   try {
     await writeSettings(req.body);
     addAuditLog('SETTINGS_UPDATED', 'Pengaturan musik dan template WhatsApp diperbarui');
@@ -450,7 +450,7 @@ app.put('/api/admin/settings', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.put('/api/admin/content', authenticateAdmin, async (req, res) => {
+app.put('/api/admin-undangan-ria-iqram/content', authenticateAdmin, async (req, res) => {
   try {
     await writeContent(req.body);
     addAuditLog('CONTENT_UPDATED', 'Detail pengantin, quote, dan rundown acara diperbarui');
@@ -460,7 +460,7 @@ app.put('/api/admin/content', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.get('/api/admin/audit-logs', authenticateAdmin, (req, res) => {
+app.get('/api/admin-undangan-ria-iqram/audit-logs', authenticateAdmin, (req, res) => {
   res.json({ success: true, logs: auditLogs });
 });
 
