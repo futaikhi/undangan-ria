@@ -121,6 +121,9 @@ export default function App() {
     const name = guestName || 'Tamu Undangan';
     const text = content?.header?.text || '';
     let imageUrl = content?.header?.imageUrl || '/images/logo.png';
+    if (imageUrl && !imageUrl.startsWith('http')) {
+      imageUrl = window.location.origin + imageUrl;
+    }
 
     document.title = `Undangan Pernikahan Ria & Iqram - ${name}`;
 
