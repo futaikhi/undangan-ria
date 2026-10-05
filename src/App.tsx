@@ -5,14 +5,20 @@ import { OpeningScreen } from './components/OpeningScreen';
 import { AdminPanel } from './components/AdminPanel';
 import { GamelanAudio } from './components/GamelanAudio';
 import { RSVP } from './components/RSVP';
+import { InvalidInvitation } from './components/InvalidInvitation';
+import { LandingPage } from './components/LandingPage';
 import { Guest, Comment, Content, Settings } from './types';
 import { JavaneseGunungan } from './components/BatikOrnament';
+
+const INVALID_INVITATION_PATH = '/undangan-tidak-valid';
 
 export default function App() {
   // Routing-like states
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminAuthenticated, setAdminAuthenticated] = useState(false);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [isInvitationInvalid, setIsInvitationInvalid] = useState(false);
+  const [isLanding, setIsLanding] = useState(false);
 
   // Core application states
   const [isOpen, setIsOpen] = useState(false);
@@ -34,8 +40,19 @@ export default function App() {
   useEffect(() => {
     const parseUrl = () => {
       const searchParams = new URLSearchParams(window.location.search);
-      const codeParam = searchParams.get('code');
       const pathname = window.location.pathname;
+
+      // 0. Legacy not-found entry point renders the same static notice
+      if (pathname === INVALID_INVITATION_PATH) {
+        setIsAdmin(false);
+        setIsLanding(false);
+        setIsInvitationInvalid(true);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsInvitationInvalid(false);
+      setIsLanding(false);
 
       // 1. Check if URL specifies Administrative pathways
       if (pathname === '/admin-undangan-ria-iqram' || searchParams.get('admin') === 'true') {
@@ -47,10 +64,8 @@ export default function App() {
       // 2. Clear Admin if normal path
       setIsAdmin(false);
 
-      // 3. Extract Guest Code
-      let code: string | null = codeParam;
-
-      // Handle /i/CODE clean URL formatting
+      // 3. Extract Guest Code from /i/CODE clean URL formatting
+      let code: string | null = null;
       if (pathname.startsWith('/i/')) {
         const parts = pathname.split('/');
         if (parts[2] && parts[2].trim() !== '') {
@@ -59,6 +74,14 @@ export default function App() {
       }
 
       setInviteCode(code);
+
+      // 4. Base URL without any invitation code shows the service landing page
+      if (!code) {
+        setIsLanding(true);
+        setIsLoading(false);
+        return;
+      }
+
       fetchInvitationData(code);
     };
 
@@ -157,6 +180,50 @@ export default function App() {
     }
   }, [content, guest, isAdmin]);
 
+  // Landing page describes the invitation service, not a specific guest
+  useEffect(() => {
+    if (!isLanding) return;
+    document.title = 'Undangan Pernikahan Digital Premium - Pesan Undangan Online';
+    const setMeta = (selector: string, content: string) => {
+      let el = document.querySelector(selector) as HTMLMetaElement | null;
+      if (!el) {
+        el = document.createElement('meta');
+        const parts = selector.match(/meta\[([^=]+)=["']([^"']+)["']\]/);
+        if (parts) el.setAttribute(parts[1], parts[2]);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
+    };
+    setMeta('meta[name="description"]', 'Undangan pernikahan digital premium yang elegan dan interaktif. RSVP, buku tamu digital, galeri foto, dan musik gamelan. Pesan melalui WhatsApp.');
+    setMeta('meta[property="og:title"]', 'Undangan Pernikahan Digital Premium');
+    setMeta('meta[property="og:description"]', 'Buat undangan pernikahan digital yang elegan, interaktif, dan mudah dibagikan ke seluruh tamu.');
+  }, [isLanding]);
+
+  // Keep invalid invitation views out of search engine indexes
+  useEffect(() => {
+    if (!isInvitationInvalid) return;
+    document.title = 'Undangan Tidak Valid - Ria & Iqram';
+    let el = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
+    if (!el) {
+      el = document.createElement('meta');
+      el.setAttribute('name', 'robots');
+      document.head.appendChild(el);
+    }
+    el.setAttribute('content', 'noindex, nofollow');
+  }, [isInvitationInvalid]);
+
+  // Show the static not-found view without changing the URL
+  const showInvitationNotFound = () => {
+    setInviteCode(null);
+    setGuest(null);
+    setComments([]);
+    setContent(null);
+    setSettings(null);
+    setErrorText(null);
+    setIsInvitationInvalid(true);
+    setIsLoading(false);
+  };
+
   const fetchInvitationData = async (code: string | null) => {
     setIsLoading(true);
     setErrorText(null);
@@ -172,6 +239,12 @@ export default function App() {
           setHeaderPreload(data.content);
           updateMetaTags(data.guest?.name || null, data.content);
         } else {
+          // Invalid or deactivated code: show the static not-found view
+          if (response.status === 404 || response.status === 403) {
+            showInvitationNotFound();
+            return;
+          }
+
           const fallbackResp = await fetch('/api/public/content');
           const fallbackData = await fallbackResp.json();
           setContent(fallbackData.content);
@@ -179,7 +252,7 @@ export default function App() {
           const commentsResp = await fetch('/api/public/comments');
           const commentsData = await commentsResp.json();
           setComments(commentsData.comments || []);
-          setErrorText('Kode undangan keliru atau khusus dibatasi oleh admin. Kami menampilkan pratinjau umum.');
+          setErrorText('Gagal memuat data undangan. Kami menampilkan pratinjau umum.');
           updateMetaTags(null, fallbackData.content);
         }
       } else {
@@ -298,7 +371,21 @@ export default function App() {
   }
 
   // ==========================================
-  // CASE A: ADMIN CONTROL PANEL PORTAL
+  // CASE A: INVALID / INACTIVE INVITATION CODE
+  // ==========================================
+  if (isInvitationInvalid) {
+    return <InvalidInvitation />;
+  }
+
+  // ==========================================
+  // CASE B: SERVICE LANDING PAGE (no code)
+  // ==========================================
+  if (isLanding) {
+    return <LandingPage />;
+  }
+
+  // ==========================================
+  // CASE C: ADMIN CONTROL PANEL PORTAL
   // ==========================================
   if (isAdmin) {
     if (!adminAuthenticated) {
@@ -374,7 +461,7 @@ export default function App() {
   }
 
   // ==========================================
-  // CASE B: STANDARD DETAILED DIGITAL INVITATION
+  // CASE D: STANDARD DETAILED DIGITAL INVITATION
   // ==========================================
   return (
     <>
