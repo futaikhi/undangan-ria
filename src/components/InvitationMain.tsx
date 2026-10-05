@@ -12,6 +12,7 @@ import {
   Info
 } from 'lucide-react';
 import { BatikDivider, BatikMandala, CornerOrnament } from './BatikOrnament';
+import { RSVP } from './RSVP';
 import { Content, Settings, Comment, Guest } from '../types';
 
 interface InvitationMainProps {
@@ -19,11 +20,21 @@ interface InvitationMainProps {
   comments: Comment[];
   content: Content;
   settings: Settings;
+  onRsvpSubmit: (rsvpData: {
+    status: string;
+    guest_count: number;
+    name: string;
+    comment: string;
+    honeypot?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
 }
 
 export const InvitationMain: React.FC<InvitationMainProps> = ({
+  guest,
   comments,
-  content
+  content,
+  settings,
+  onRsvpSubmit
 }) => {
   // Real-time Countdown Timer State
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -62,7 +73,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
   };
 
   return (
-    <div className="relative min-h-screen bg-paper-texture text-stone-800 overflow-hidden">    
+    <div className="relative min-h-screen bg-paper-texture-no-image text-stone-800 overflow-hidden">    
       {/* 1. HERO SECTION */}
       <section className="relative min-h-screen flex flex-col justify-center items-center px-4 py-16 text-center text-wedding-cream bg-dark-wood relative">
         <div className="absolute inset-0 bg-black/60 z-0"></div>
@@ -236,7 +247,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
       </section>
 
       {/* 4. DETAIL ACARA & MAPS */}
-      <section className="py-12 px-4 bg-paper-texture relative" id="section-events">
+      <section className="py-12 px-4 bg-paper-texture-no-image relative" id="section-events">
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="font-display text-3xl sm:text-4xl font-semibold text-stone-900 tracking-wide">
             Rundown Acara
@@ -486,7 +497,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
       </section>
 
       {/* 6. WEDDING GIFT */}
-      <section className="py-24 px-4 bg-paper-texture" id="section-gift">
+      <section className="py-24 px-4 bg-paper-texture-no-image" id="section-gift">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="font-display text-3xl sm:text-4xl font-semibold text-stone-900 tracking-wide">
             Kado Nikah Digital
@@ -537,8 +548,11 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
         </div>
       </section>
 
+      {/* 7. RSVP ATTENDANCE FORM */}
+      <RSVP guest={guest} content={content} settings={settings} onRsvpSubmit={onRsvpSubmit} />
+
       {/* 8. LIVE BOOK COMMENTS VIEW */}
-      <section className="py-24 px-4 bg-paper-texture" id="section-messages-list">
+      <section className="py-24 px-4 bg-paper-texture-no-image" id="section-messages-list">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="font-display text-3xl sm:text-4xl font-semibold text-stone-900 tracking-wide">
             Doa & Restu Para Tamu

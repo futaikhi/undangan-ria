@@ -4,7 +4,7 @@ import { Lock, KeyRound, ArrowLeft, ShieldAlert } from 'lucide-react';
 import { OpeningScreen } from './components/OpeningScreen';
 import { AdminPanel } from './components/AdminPanel';
 import { GamelanAudio } from './components/GamelanAudio';
-import { RSVP } from './components/RSVP';
+import { InvitationMain } from './components/InvitationMain';
 import { InvalidInvitation } from './components/InvalidInvitation';
 import { LandingPage } from './components/LandingPage';
 import { Guest, Comment, Content, Settings } from './types';
@@ -501,7 +501,7 @@ export default function App() {
 
             {/* Main scroll elements */}
             {content && settings && (
-              <RSVP
+              <InvitationMain
                 guest={guest}
                 comments={comments}
                 content={content}

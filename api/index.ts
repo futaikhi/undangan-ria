@@ -1,6 +1,10 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
+import QRCode from 'qrcode';
+import nodemailer, { Transporter } from 'nodemailer';
+import { Jimp } from 'jimp';
+import { createHmac } from 'crypto';
 import path from 'path';
 import fs from 'fs';
 import {
@@ -94,6 +98,174 @@ function generateCustomCode(): string {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Guest data encoded as a signed JSON envelope inside the QR.
+// Format: base64url(JSON).hmac — the handler verifies the HMAC
+// signature with the shared JWT_SECRET before trusting the data,
+// then base64url-decodes the payload back into JSON.
+function buildCheckinPayload(guest: any): string {
+  const data = JSON.stringify({
+    code: guest.code,
+    name: guest.name,
+    category: guest.category || 'Umum',
+    guestCount: parseInt(guest.guest_count) || 1
+  });
+  const payloadB64 = Buffer.from(data).toString('base64url');
+  const sig = createHmac('sha256', JWT_SECRET).update(payloadB64).digest('base64url').slice(0, 16);
+  return `${payloadB64}.${sig}`;
+}
+
+function buildCheckinUrl(data: string, settings: any): string {
+  const base = ((settings?.checkin?.baseUrl || '') as string).trim().replace(/\/+$/, '');
+  if (base) return `${base}#ticket=${encodeURIComponent(data)}`;
+  return data;
+}
+
+// Render a themed QR with rounded module corners (Javanese wedding palette:
+// deep batik brown on warm cream). Modules merge into pill-shaped strips so
+// connected runs read as soft rounded blocks, matching the site's rounded UI.
+function renderRoundedQrJimp(text: string, size: number) {
+  const qr = QRCode.create(text, { errorCorrectionLevel: 'H' });
+  const matrix = qr.modules as unknown as { size: number; data: Uint8Array };
+  const n = matrix.size;
+  const quiet = 2;
+  const total = n + quiet * 2;
+
+  // Integer module size, centered — fractional sizing misaligns dense matrices
+  const m = Math.floor(size / total);
+  const offset = Math.floor((size - m * total) / 2);
+  const radius = m * 0.42;
+
+  const image = new Jimp({ width: size, height: size });
+  const data = image.bitmap.data;
+
+  // Warm cream background (#fffdf7)
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = 255;
+    data[i + 1] = 253;
+    data[i + 2] = 247;
+    data[i + 3] = 255;
+  }
+
+  // Deep batik brown modules (#241a08)
+  const darkR = 36;
+  const darkG = 26;
+  const darkB = 8;
+
+  const isSet = (x: number, y: number): boolean =>
+    x >= 0 && y >= 0 && x < n && y < n && matrix.data[y * n + x] === 1;
+
+  for (let gy = 0; gy < n; gy++) {
+    for (let gx = 0; gx < n; gx++) {
+      if (!isSet(gx, gy)) continue;
+
+      const ox = offset + (gx + quiet) * m;
+      const oy = offset + (gy + quiet) * m;
+
+      // A corner is rounded only when both edge neighbours are empty,
+      // so connected modules merge into smooth pill-shaped strips.
+      const tl = !isSet(gx - 1, gy) && !isSet(gx, gy - 1);
+      const tr = !isSet(gx + 1, gy) && !isSet(gx, gy - 1);
+      const bl = !isSet(gx - 1, gy) && !isSet(gx, gy + 1);
+      const br = !isSet(gx + 1, gy) && !isSet(gx, gy + 1);
+
+      const x0 = Math.floor(ox);
+      const x1 = Math.ceil(ox + m);
+      const y0 = Math.floor(oy);
+      const y1 = Math.ceil(oy + m);
+
+      for (let Y = y0; Y < y1; Y++) {
+        for (let X = x0; X < x1; X++) {
+          const lx = X - ox + 0.5;
+          const ly = Y - oy + 0.5;
+          let inside = true;
+
+          if (tl && lx < radius && ly < radius && (radius - lx) ** 2 + (radius - ly) ** 2 > radius ** 2) {
+            inside = false;
+          } else if (tr && lx > m - radius && ly < radius && (lx - (m - radius)) ** 2 + (radius - ly) ** 2 > radius ** 2) {
+            inside = false;
+          } else if (bl && lx < radius && ly > m - radius && (radius - lx) ** 2 + (ly - (m - radius)) ** 2 > radius ** 2) {
+            inside = false;
+          } else if (br && lx > m - radius && ly > m - radius && (lx - (m - radius)) ** 2 + (ly - (m - radius)) ** 2 > radius ** 2) {
+            inside = false;
+          }
+
+          if (!inside || X < 0 || Y < 0 || X >= size || Y >= size) continue;
+          const i = (Y * size + X) * 4;
+          data[i] = darkR;
+          data[i + 1] = darkG;
+          data[i + 2] = darkB;
+          data[i + 3] = 255;
+        }
+      }
+    }
+  }
+
+  return image;
+}
+
+async function renderQrDataUrl(text: string): Promise<string> {
+  const qr = renderRoundedQrJimp(text, 512);
+
+  // Best-effort logo overlay in the QR center; falls back to plain QR if unavailable
+  const logoCandidates = [
+    path.join(process.cwd(), 'public', 'images', 'logo.png'),
+    path.join(process.cwd(), 'dist', 'images', 'logo.png')
+  ];
+
+  for (const logoPath of logoCandidates) {
+    try {
+      if (!fs.existsSync(logoPath)) continue;
+      const logo = await Jimp.read(logoPath);
+      const qrSize = qr.width;
+      const logoSize = Math.floor(qrSize * 0.22);
+      logo.resize({ w: logoSize }); // keeps aspect ratio
+
+      const x = Math.floor((qrSize - logo.width) / 2);
+      const y = Math.floor((qrSize - logo.height) / 2);
+      const pad = Math.floor(logoSize * 0.09);
+
+      // Soft white backdrop behind the logo for contrast + scannability
+      const backdrop = new Jimp({
+        width: logo.width + pad * 2,
+        height: logo.height + pad * 2,
+        color: 0xffffffff
+      });
+      qr.composite(backdrop, x - pad, y - pad);
+      qr.composite(logo, x, y);
+      break;
+    } catch {
+      // try the next candidate path
+    }
+  }
+
+  const buffer = await qr.getBuffer('image/png');
+  return `data:image/png;base64,${buffer.toString('base64')}`;
+}
+
+function buildCheckinSmtpTransport(): Transporter | null {
+  const host = (process.env.SMTP_HOST || '').trim();
+  const user = (process.env.SMTP_USER || '').trim();
+  if (!host || !user) return null;
+  const portRaw = (process.env.SMTP_PORT || '587').trim();
+  const port = parseInt(portRaw) || 587;
+  const pass = process.env.SMTP_PASS || '';
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass: pass || undefined }
+  });
 }
 
 app.get('/api/public/content', async (req, res) => {
@@ -194,6 +366,110 @@ app.post('/api/public/invitation/:code/rsvp', rateLimiter(10, 60000), async (req
     });
   } catch (err: any) {
     res.status(500).json({ error: 'Gagal memproses RSVP: ' + err.message });
+  }
+});
+
+// Issue a signed check-in ticket + rendered QR for guests confirmed as "hadir".
+// The QR payload is only generated here; scanning/handling is done by an external project/subdomain.
+app.get('/api/public/invitation/:code/qr', rateLimiter(30, 60000), async (req, res) => {
+  const { code } = req.params;
+  try {
+    const guestRs = await db.execute({ sql: 'SELECT * FROM guests WHERE code = ?', args: [code.toUpperCase()] });
+    const guest = guestRs.rows[0] as any;
+    if (!guest) return res.status(404).json({ error: 'Kode undangan tidak ditemukan' });
+    if (guest.status_active === 0) return res.status(403).json({ error: 'Undangan ini dinonaktifkan sementara oleh admin' });
+    if (guest.status !== 'hadir') {
+      return res.status(400).json({ error: 'QR check-in hanya diterbitkan untuk tamu yang mengonfirmasi HADIR' });
+    }
+
+    const content = await readContent();
+    const settings = await readSettings();
+    const checkinData = buildCheckinPayload(guest);
+    const checkinUrl = buildCheckinUrl(checkinData, settings);
+    const qrDataUrl = await renderQrDataUrl(checkinUrl);
+
+    res.json({
+      success: true,
+      checkinData,
+      checkinUrl,
+      qrDataUrl,
+      payload: {
+        code: guest.code,
+        name: guest.name,
+        guestCount: parseInt(guest.guest_count) || 1,
+        event: 'Ria & Iqram',
+        eventDate: content?.events?.resepsi?.date || ''
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Gagal membuat QR check-in: ' + err.message });
+  }
+});
+
+// Email the check-in QR ticket to the guest's email address (requires SMTP env configuration).
+app.post('/api/public/invitation/:code/qr/email', rateLimiter(3, 60000), async (req, res) => {
+  const { code } = req.params;
+  const { email, honeypot } = req.body || {};
+
+  if (honeypot) return res.status(400).json({ error: 'Deteksi spam teraktivasi!' });
+
+  const target = (email || '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target)) {
+    return res.status(400).json({ error: 'Alamat email tidak valid' });
+  }
+
+  try {
+    const guestRs = await db.execute({ sql: 'SELECT * FROM guests WHERE code = ?', args: [code.toUpperCase()] });
+    const guest = guestRs.rows[0] as any;
+    if (!guest) return res.status(404).json({ error: 'Kode undangan tidak ditemukan' });
+    if (guest.status_active === 0) return res.status(403).json({ error: 'Undangan ini dinonaktifkan sementara oleh admin' });
+    if (guest.status !== 'hadir') {
+      return res.status(400).json({ error: 'QR check-in hanya diterbitkan untuk tamu yang mengonfirmasi HADIR' });
+    }
+
+    const content = await readContent();
+    const settings = await readSettings();
+    const checkinData = buildCheckinPayload(guest);
+    const checkinUrl = buildCheckinUrl(checkinData, settings);
+    const qrDataUrl = await renderQrDataUrl(checkinUrl);
+
+    const transporter = buildCheckinSmtpTransport();
+    if (!transporter) {
+      return res.status(501).json({
+        error: 'Pengiriman email belum dikonfigurasi di server (SMTP). Silakan simpan QR langsung dari halaman undangan.'
+      });
+    }
+
+    const guestCount = parseInt(guest.guest_count) || 1;
+    const eventDate = content?.events?.resepsi?.date || '';
+    const safeName = escapeHtml(guest.name);
+    const safeEmail = escapeHtml(target);
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: target,
+      subject: 'Tiket Check-in QR — Undangan Pernikahan Ria & Iqram',
+      html: `
+        <div style="font-family: Georgia, 'Times New Roman', serif; max-width: 480px; margin: 0 auto; padding: 28px 24px; text-align: center; background: #1a1005; color: #f5efe0;">
+          <p style="letter-spacing: 5px; font-size: 11px; color: #d4af37; margin: 0;">DENGAN PENUH SYUKUR</p>
+          <h1 style="font-size: 28px; color: #d4af37; margin: 10px 0 4px;">Iqram &amp; Ria</h1>
+          <p style="font-size: 13px; color: #cbbfa5; margin: 0 0 22px;">Tiket Check-in Kehadiran</p>
+          <div style="background: #fffdf7; border-radius: 18px; padding: 18px; margin: 0 auto 22px; display: inline-block;">
+            <img src="${qrDataUrl}" alt="QR Check-in" width="240" height="240" style="display: block;" />
+          </div>
+          <p style="font-size: 15px; color: #f5efe0; margin: 0 0 4px;">Atas nama: <strong>${safeName}</strong></p>
+          <p style="font-size: 12px; color: #cbbfa5; margin: 0 0 4px;">Kode Undangan: <strong style="color: #d4af37;">${escapeHtml(guest.code)}</strong> &bull; ${guestCount} orang</p>
+          ${eventDate ? `<p style="font-size: 12px; color: #cbbfa5; margin: 0 0 4px;">${escapeHtml(eventDate)}</p>` : ''}
+          <p style="font-size: 11px; color: #8a7d5f; margin: 18px 0 0;">Simpan dan tunjukkan QR ini ketika tiba di lokasi acara.</p>
+          <p style="font-size: 10px; color: #6b5f45; margin: 10px 0 0;">Dikirim untuk ${safeEmail}</p>
+        </div>
+      `
+    });
+
+    addAuditLog('QR_EMAIL_SENT', `QR check-in dikirim ke ${target} untuk tamu ${guest.name}`);
+    res.json({ success: true, message: 'QR check-in telah dikirim ke email Anda' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Gagal mengirim email: ' + err.message });
   }
 });
 

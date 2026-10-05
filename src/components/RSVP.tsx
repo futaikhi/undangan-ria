@@ -1,19 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
 	Calendar,
+	CheckCircle2,
 	Heart,
 	MapPin,
 	Navigation,
+	QrCode,
 	Send
 } from 'lucide-react';
-import { InvitationMain } from './InvitationMain';
 import { BatikDivider } from './BatikOrnament';
-import { Content, Settings, Comment, Guest } from '../types';
+import { CheckinQRCard } from './CheckinQRCard';
+import { Content, Guest, Settings } from '../types';
 
 interface RSVPProps {
 	guest: Guest | null;
-	comments: Comment[];
 	content: Content;
 	settings: Settings;
 	onRsvpSubmit: (rsvpData: {
@@ -25,29 +26,30 @@ interface RSVPProps {
 	}) => Promise<{ success: boolean; error?: string }>;
 }
 
-export const RSVP: React.FC<RSVPProps> = ({
-	guest,
-	comments,
-	content,
-	settings,
-	onRsvpSubmit
-}) => {
+export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubmit }) => {
+	const hasResponded = !!guest && guest.status !== 'belum_respon';
 
-	const [isOpenDetail, setIsOpenDetail] = useState(false);
-	// RSVP Form state
-	const [rsvpStatus, setRsvpStatus] = useState<'hadir' | 'tidak_hadir'>('hadir');
-	const [rsvpCount, setRsvpCount] = useState<number>(1);
+	// RSVP Form state, seeded from the stored guest attendance
+	const [rsvpStatus, setRsvpStatus] = useState<'hadir' | 'tidak_hadir'>(
+		guest?.status === 'tidak_hadir' ? 'tidak_hadir' : 'hadir'
+	);
+	const [rsvpCount, setRsvpCount] = useState<number>(
+		guest?.guest_count && guest.guest_count > 0 ? guest.guest_count : 1
+	);
 	const [rsvpName, setRsvpName] = useState<string>(guest?.name || '');
 	const [rsvpComment, setRsvpComment] = useState<string>('');
 	const [honeypot, setHoneypot] = useState<string>(''); // anti-spam
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submitMsg, setSubmitMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+	const [ticketOpen, setTicketOpen] = useState(false);
 
+	// Nama tamu mengikuti data undangan dan tidak boleh diubah oleh pengunjung
+	const isNameLocked = !!guest?.name;
+	const isNameTouchedRef = useRef(false);
 	useEffect(() => {
-		if (guest && guest.status != "belum_respon") {
-			setIsOpenDetail(true);
-		}
-	});
+		if (isNameTouchedRef.current) return;
+		if (guest?.name) setRsvpName(guest.name);
+	}, [guest]);
 
 	// Submit RSVP Form
 	const triggerRSVP = async (e: React.FormEvent) => {
@@ -63,6 +65,9 @@ export const RSVP: React.FC<RSVPProps> = ({
 		}
 
 		try {
+			// Ticket modal auto-opens only on the first "hadir" confirmation
+			const wasHadirBefore = guest?.status === 'hadir';
+
 			const resp = await onRsvpSubmit({
 				status: rsvpStatus,
 				guest_count: rsvpStatus === 'hadir' ? rsvpCount : 0,
@@ -72,9 +77,16 @@ export const RSVP: React.FC<RSVPProps> = ({
 			});
 
 			if (resp.success) {
-				setSubmitMsg({ type: 'success', text: 'Terima kasih! Konfirmasi kehadiran Anda telah tersimpan.' });
+				setSubmitMsg({
+					type: 'success',
+					text: rsvpStatus === 'hadir'
+						? 'Terima kasih! Konfirmasi kehadiran Anda telah tersimpan. Tiket QR check-in Anda terbit.'
+						: 'Terima kasih! Konfirmasi kehadiran Anda telah tersimpan.'
+				});
+				if (rsvpStatus === 'hadir' && !wasHadirBefore) {
+					setTicketOpen(true);
+				}
 				setRsvpComment(''); // Clear input message
-				setIsOpenDetail(true);
 			} else {
 				setSubmitMsg({ type: 'error', text: resp.error || 'Gagal menyimpan RSVP' });
 			}
@@ -85,208 +97,213 @@ export const RSVP: React.FC<RSVPProps> = ({
 		}
 	};
 
+	const respondedStatus = guest?.status === 'hadir' ? 'HADIR' : 'TIDAK HADIR';
+
 	return (
-		<>
-			<AnimatePresence mode="wait">
-				{!isOpenDetail ? (
-					<div className="relative min-h-screen bg-paper-texture bg-batik-kawung text-stone-80 overflow-hidden">
-						{/* RSVP FORM */}
-						<section className=" min-h-screen py-24 px-4 bg-stone-900 text-wedding-cream relative" id="section-rsvp">
-							<div className="absolute inset-0 bg-batik-kawung opacity-5 pointer-events-none"></div>
+		<section className="relative py-24 px-4 bg-stone-900 text-wedding-cream overflow-hidden" id="section-rsvp">
+			<div className="absolute inset-0 bg-batik-kawung opacity-5 pointer-events-none"></div>
 
-							<div className="max-w-2xl mx-auto text-center relative z-10">
-								<h2 className="font-display text-3xl sm:text-4xl font-semibold text-gold-gradient tracking-wide">
-									Konfirmasi Kehadiran
-								</h2>
-								<BatikDivider />
-								<div className="text-xs font-mono tracking-wider text-gold-gentle block mb-6 flex items-center justify-center gap-2 my-6">
-									<Calendar size={12} className="text-gold-gentle" />
-									Jumat, 04 Desember 2026
-								</div>
-								<span className="text-xs font-mono tracking-wider text-gold-gentle block mb-6 flex items-center justify-center gap-2 my-6">
-									<MapPin size={12} className="text-gold-gentle" />
-									Tanjung Kodok Beach Resort <br />Paciran, Lamongan
-								</span>
-								<a href="https://maps.app.goo.gl/uyk57Sp6yyJhtCxP6" target='_blank' className="flex items-center justify-center gap-2 my-6 py-3.5 rounded-xl text-xs tracking-wider font-semibold border-2 transition-all cursor-pointer bg-batik-brown border-gold-gentle text-white shadow-md w-50 place-self-center">
-									<Navigation size={15} className="white" />
-									Lihat Lokasi
-								</a>
+			<div className="max-w-2xl mx-auto text-center relative z-10">
+				<h2 className="font-display text-3xl sm:text-4xl font-semibold text-gold-gradient tracking-wide">
+					Konfirmasi Kehadiran
+				</h2>
+				<BatikDivider />
 
-								{/* Guest personalization greeting card inside RSVP layout */}
-								{guest && (
-									<div className="bg-stone-850 border border-gold-gentle/20 rounded-2xl p-5 mb-8 max-w-lg mx-auto text-stone-200 flex items-center gap-4 text-left shadow-lg">
-										<div className="w-10 h-10 rounded-full bg-batik-brown/30 flex items-center justify-center border border-gold-gentle">
-											<Heart size={16} className="text-gold-gentle" />
-										</div>
-										<div className="flex-grow">
-											<p className="text-[10px] text-stone-400 uppercase tracking-widest">Tamu Undangan Terhormat</p>
-											<p className="text-sm font-semibold font-serif text-white">{guest.name}</p>
-											{guest.category && <p className="text-[9px] text-white uppercase font-mono mt-0.5">Kategori: {guest.category}</p>}
-										</div>
-									</div>
-								)}
-
-								{/* Form */}
-								<form onSubmit={triggerRSVP} className="bg-stone-900 border border-stone-800 rounded-3xl p-6 sm:p-10 shadow-2xl max-w-lg mx-auto text-left relative">
-
-									{/* Soft ornamental Corner brackets inside dark RSVP layout */}
-									<div className="absolute top-2 left-2 w-3 h-3 border-t border-l border-gold-gentle/30"></div>
-									<div className="absolute top-2 right-2 w-3 h-3 border-t border-r border-gold-gentle/30"></div>
-									<div className="absolute bottom-2 left-2 w-3 h-3 border-b border-l border-gold-gentle/30"></div>
-									<div className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-gold-gentle/30"></div>
-
-									{/* Honeypot Spam detection (Invisible in standard styling) */}
-									<div className="hidden">
-										<label htmlFor="honey_pot_field">Leave this empty</label>
-										<input
-											id="honey_pot_field"
-											type="text"
-											value={honeypot}
-											onChange={(e) => setHoneypot(e.target.value)}
-											autoComplete="off"
-										/>
-									</div>
-
-									{/* Attendance Toggle */}
-									<div className="mb-6">
-										<label className="block text-xs uppercase tracking-widest text-stone-400 font-bold mb-3">
-											Konfirmasi Kehadiran
-										</label>
-										<div className="grid grid-cols-2 gap-3">
-											<button
-												type="button"
-												onClick={() => setRsvpStatus('hadir')}
-												className={`py-3.5 rounded-xl text-xs uppercase tracking-wider font-semibold border-2 transition-all cursor-pointer ${rsvpStatus === 'hadir'
-													? 'bg-batik-brown border-gold-gentle text-white shadow-md'
-													: 'bg-stone-850 border-stone-800 text-stone-400 hover:text-white hover:border-stone-700'
-													}`}
-												id="rsvp-hadir-btn"
-											>
-												Hadir
-											</button>
-											<button
-												type="button"
-												onClick={() => setRsvpStatus('tidak_hadir')}
-												className={`py-3.5 rounded-xl text-xs uppercase tracking-wider font-semibold border-2 transition-all cursor-pointer ${rsvpStatus === 'tidak_hadir'
-													? 'bg-batik-brown border-gold-gentle text-white shadow-md'
-													: 'bg-stone-850 border-stone-800 text-stone-400 hover:text-white hover:border-stone-700'
-													}`}
-												id="rsvp-absen-btn"
-											>
-												Tidak Hadir
-											</button>
-										</div>
-									</div>
-
-									{/* Name Input field */}
-									<div className="mb-6">
-										<label className="block text-xs uppercase tracking-widest text-stone-400 font-bold mb-2">
-											Nama Anda
-										</label>
-										<input
-											type="text"
-											required
-											value={rsvpName}
-											onChange={(e) => setRsvpName(e.target.value)}
-											placeholder="Masukkan nama lengkap"
-											className="w-full bg-stone-850 border border-stone-800 focus:border-gold-gentle focus:outline-none rounded-xl p-3.5 text-xs text-stone-100 transition-colors"
-											id="rsvp-input-name"
-										/>
-									</div>
-
-									{/* Guest count (Visible only if HADIR) */}
-									<AnimatePresence>
-										{rsvpStatus === 'hadir' && (
-											<motion.div
-												initial={{ opacity: 0, height: 0 }}
-												animate={{ opacity: 1, height: 'auto' }}
-												exit={{ opacity: 0, height: 0 }}
-												className="mb-6 overflow-hidden"
-											>
-												<label className="block text-xs uppercase tracking-widest text-stone-400 font-bold mb-2">
-													Jumlah Tamu Hadir
-												</label>
-												<div className="flex items-center gap-3">
-													{[1, 2, 3, 4].map((num) => (
-														<button
-															key={num}
-															type="button"
-															onClick={() => setRsvpCount(num)}
-															className={`w-12 h-12 rounded-xl text-xs font-semibold font-mono border transition-all cursor-pointer flex items-center justify-center ${rsvpCount === num
-																? 'bg-gold-gentle border-gold-shine text-stone-400 shadow-lg font-bold'
-																: 'bg-stone-850 border-stone-800 text-stone-400 hover:border-stone-700'
-																}`}
-															id={`rsvp-count-${num}`}
-														>
-															{num}
-														</button>
-													))}
-												</div>
-											</motion.div>
-										)}
-									</AnimatePresence>
-
-									{/* Comment Message (Ucapanku) */}
-									<div className="mb-6">
-										<label className="block text-xs uppercase tracking-widest text-stone-400 font-bold mb-2">
-											Pesan / Ucapan (Buku Tamu)
-										</label>
-										<textarea
-											value={rsvpComment}
-											onChange={(e) => setRsvpComment(e.target.value)}
-											placeholder="Kirimkan limpahan doa restu dan ucapan hangat Anda di sini..."
-											rows={4}
-											className="w-full bg-stone-850 border border-stone-800 focus:border-gold-gentle focus:outline-none rounded-xl p-3.5 text-xs text-stone-100 placeholder-stone-450 transition-colors"
-											id="rsvp-input-comment"
-										/>
-									</div>
-
-									{/* Response Alerts */}
-									{submitMsg && (
-										<div
-											className={`p-4 rounded-xl text-xs mb-6 font-sans leading-normal ${submitMsg.type === 'success'
-												? 'bg-green-950/40 border border-green-800/60 text-green-300'
-												: 'bg-red-950/40 border border-red-800/60 text-red-300'
-												}`}
-										>
-											{submitMsg.text}
-										</div>
-									)}
-
-									{/* Submit Button */}
-									<button
-										type="submit"
-										disabled={isSubmitting}
-										className={`w-full py-3.5 rounded-xl bg-gradient-to-r from-batik-brown to-amber-800 text-white border border-gold-gentle text-xs uppercase font-semibold tracking-widest shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:from-amber-800 hover:to-batik-brown'
-											}`}
-										id="rsvp-submit-btn"
-									>
-										<Send size={12} />
-										<span>{isSubmitting ? 'Mengirim...' : 'Kirim Konfirmasi'}</span>
-									</button>
-								</form>
-							</div>
-						</section>
+				{/* Already responded notice */}
+				{hasResponded && (
+					<div className="bg-green-950/30 border border-green-800/50 text-green-300 rounded-2xl p-4 mb-6 max-w-lg mx-auto text-left flex items-start gap-3" id="rsvp-status-banner">
+						<CheckCircle2 size={16} className="mt-0.5 flex-shrink-0" />
+						<div>
+							<p className="text-xs font-semibold">
+								Konfirmasi Anda tersimpan: {respondedStatus}
+								{guest?.status === 'hadir' && guest.guest_count > 0 ? ` (${guest.guest_count} orang)` : ''}
+							</p>
+							<p className="text-[11px] text-stone-400 mt-1 leading-relaxed">
+								Ingin mengubah jawaban? Silakan perbarui formulir di bawah.
+							</p>
+						</div>
 					</div>
-				) : (
-					// Immersive Scroll View Section
-					<motion.div
-						key="main-invitation"
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						transition={{ duration: 0.8 }}
-					>
-
-						{/* Main scroll elements */}
-						<InvitationMain
-							guest={guest}
-							comments={comments}
-							content={content}
-							settings={settings}
-						/>
-					</motion.div>
 				)}
-			</AnimatePresence>
-		</>
+
+				{/* Form */}
+				<form onSubmit={triggerRSVP} className="relative z-20 bg-stone-900 border border-stone-800 rounded-3xl p-6 sm:p-10 shadow-2xl max-w-lg mx-auto text-left pointer-events-auto">
+
+					{/* Soft ornamental Corner brackets inside dark RSVP layout */}
+					<div className="absolute top-2 left-2 w-3 h-3 border-t border-l border-gold-gentle/30"></div>
+					<div className="absolute top-2 right-2 w-3 h-3 border-t border-r border-gold-gentle/30"></div>
+					<div className="absolute bottom-2 left-2 w-3 h-3 border-b border-l border-gold-gentle/30"></div>
+					<div className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-gold-gentle/30"></div>
+
+					{/* Honeypot Spam detection (Invisible in standard styling) */}
+					<div className="hidden">
+						<label htmlFor="honey_pot_field">Leave this empty</label>
+						<input
+							id="honey_pot_field"
+							type="text"
+							value={honeypot}
+							onChange={(e) => setHoneypot(e.target.value)}
+							autoComplete="off"
+						/>
+					</div>
+
+					{/* Attendance Toggle */}
+					<div className="mb-6">
+						<label className="block text-xs uppercase tracking-widest text-stone-400 font-bold mb-3">
+							Konfirmasi Kehadiran
+						</label>
+						<div className="grid grid-cols-2 gap-3">
+							<button
+								type="button"
+								onClick={() => setRsvpStatus('hadir')}
+								className={`py-3.5 rounded-xl text-xs uppercase tracking-wider font-semibold border-2 transition-all cursor-pointer ${rsvpStatus === 'hadir'
+									? 'bg-batik-brown border-gold-gentle text-white shadow-md'
+									: 'bg-stone-850 border-stone-800 text-stone-400 hover:text-white hover:border-stone-700'
+									}`}
+								id="rsvp-hadir-btn"
+							>
+								Hadir
+							</button>
+							<button
+								type="button"
+								onClick={() => setRsvpStatus('tidak_hadir')}
+								className={`py-3.5 rounded-xl text-xs uppercase tracking-wider font-semibold border-2 transition-all cursor-pointer ${rsvpStatus === 'tidak_hadir'
+									? 'bg-batik-brown border-gold-gentle text-white shadow-md'
+									: 'bg-stone-850 border-stone-800 text-stone-400 hover:text-white hover:border-stone-700'
+									}`}
+								id="rsvp-absen-btn"
+							>
+								Tidak Hadir
+							</button>
+						</div>
+					</div>
+
+					{/* Name Input field */}
+					<div className="mb-6">
+						<label className="block text-xs uppercase tracking-widest text-stone-400 font-bold mb-2">
+							Nama Anda
+						</label>
+						<input
+							type="text"
+							required={!isNameLocked}
+							readOnly={isNameLocked}
+							aria-readonly={isNameLocked}
+							value={rsvpName}
+							onChange={(e) => {
+								isNameTouchedRef.current = true;
+								setRsvpName(e.target.value);
+							}}
+							placeholder="Masukkan nama lengkap"
+							autoComplete="name"
+							enterKeyHint="done"
+							inputMode="text"
+							spellCheck={false}
+							className={`w-full border rounded-xl p-3.5 text-xs transition-colors ${isNameLocked
+								? 'bg-stone-850/60 border-stone-800 text-stone-300 cursor-default'
+								: 'bg-stone-850 border-stone-800 text-stone-100 focus:border-gold-gentle focus:outline-none focus:ring-1 focus:ring-gold-gentle cursor-text'
+								}`}
+							id="rsvp-input-name"
+						/>
+						{isNameLocked && (
+							<p className="text-[10px] text-stone-500 mt-2 leading-relaxed">
+								Nama terisi otomatis dari data undangan dan tidak dapat diubah.
+							</p>
+						)}
+					</div>
+
+					{/* Guest count (Visible only if HADIR) */}
+					<AnimatePresence>
+						{rsvpStatus === 'hadir' && (
+							<motion.div
+								initial={{ opacity: 0, height: 0 }}
+								animate={{ opacity: 1, height: 'auto' }}
+								exit={{ opacity: 0, height: 0 }}
+								className="mb-6 overflow-hidden"
+							>
+								<label className="block text-xs uppercase tracking-widest text-stone-400 font-bold mb-2">
+									Jumlah Tamu Hadir
+								</label>
+								<div className="flex items-center gap-3">
+									{[1, 2, 3, 4].map((num) => (
+										<button
+											key={num}
+											type="button"
+											onClick={() => setRsvpCount(num)}
+											className={`w-12 h-12 rounded-xl text-xs font-semibold font-mono border transition-all cursor-pointer flex items-center justify-center ${rsvpCount === num
+												? 'bg-gold-gentle border-gold-shine text-stone-400 shadow-lg font-bold'
+												: 'bg-stone-850 border-stone-800 text-stone-400 hover:border-stone-700'
+												}`}
+											id={`rsvp-count-${num}`}
+										>
+											{num}
+										</button>
+									))}
+								</div>
+							</motion.div>
+						)}
+					</AnimatePresence>
+
+					{/* Comment Message (Ucapanku) */}
+					<div className="mb-6">
+						<label className="block text-xs uppercase tracking-widest text-stone-400 font-bold mb-2">
+							Pesan / Ucapan (Buku Tamu)
+						</label>
+						<textarea
+							value={rsvpComment}
+							onChange={(e) => setRsvpComment(e.target.value)}
+							placeholder="Kirimkan limpahan doa restu dan ucapan hangat Anda di sini..."
+							rows={4}
+							className="w-full bg-stone-850 border border-stone-800 focus:border-gold-gentle focus:outline-none rounded-xl p-3.5 text-xs text-stone-100 placeholder-stone-450 transition-colors"
+							id="rsvp-input-comment"
+						/>
+					</div>
+
+					{/* Response Alerts */}
+					{submitMsg && (
+						<div
+							className={`p-4 rounded-xl text-xs mb-6 font-sans leading-normal ${submitMsg.type === 'success'
+								? 'bg-green-950/40 border border-green-800/60 text-green-300'
+								: 'bg-red-950/40 border border-red-800/60 text-red-300'
+								}`}
+						>
+							{submitMsg.text}
+						</div>
+					)}
+
+					{/* Submit Button */}
+					<button
+						type="submit"
+						disabled={isSubmitting}
+						className={`w-full py-3.5 rounded-xl bg-gradient-to-r from-batik-brown to-amber-800 text-white border border-gold-gentle text-xs uppercase font-semibold tracking-widest shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:from-amber-800 hover:to-batik-brown'
+							}`}
+						id="rsvp-submit-btn"
+					>
+						<Send size={12} />
+						<span>{isSubmitting ? 'Mengirim...' : 'Kirim Konfirmasi'}</span>
+					</button>
+				</form>
+
+			{/* Check-in ticket: modal entry point for confirmed guests */}
+			{guest?.status === 'hadir' && settings && (
+				<>
+					<button
+						type="button"
+						onClick={() => setTicketOpen(true)}
+						className="mt-6 w-full max-w-lg mx-auto flex items-center justify-center gap-2 py-3.5 rounded-xl bg-stone-900 border border-gold-gentle/40 text-gold-gentle hover:text-white hover:border-gold-gentle transition-all text-[11px] uppercase font-semibold tracking-widest cursor-pointer"
+						id="checkin-qr-open-btn"
+					>
+						<QrCode size={14} />
+						<span>Lihat / Simpan Tiket Check-in</span>
+					</button>
+					<CheckinQRCard
+						guest={guest}
+						content={content}
+						settings={settings}
+						open={ticketOpen}
+						onClose={() => setTicketOpen(false)}
+					/>
+				</>
+			)}
+			</div>
+		</section>
 	);
 };
