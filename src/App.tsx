@@ -321,7 +321,6 @@ export default function App() {
     name: string;
     comment: string;
     event_key?: string | null;
-    arrival_time?: string | null;
     honeypot?: string;
   }) => {
     // Determine active code (defaults to RIAIQRAM if they are browsing generic preview)

@@ -24,7 +24,6 @@ interface RSVPProps {
 		name: string;
 		comment: string;
 		event_key?: string | null;
-		arrival_time?: string | null;
 		honeypot?: string;
 	}) => Promise<{ success: boolean; error?: string }>;
 }
@@ -41,7 +40,6 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 	);
 	const [rsvpName, setRsvpName] = useState<string>(guest?.name || '');
 	const [rsvpEventKey, setRsvpEventKey] = useState<EventKey | ''>(guest?.event_key || '');
-	const [rsvpArrival, setRsvpArrival] = useState<string>(guest?.arrival_time || '');
 	const [rsvpComment, setRsvpComment] = useState<string>('');
 	const [honeypot, setHoneypot] = useState<string>(''); // anti-spam
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,14 +61,13 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 		if (guest?.name) setRsvpName(guest.name);
 	}, [guest]);
 
-	// Rencana kedatangan (acara + jam datang) diisi ulang dari data tamu,
+	// Acara yang diikuti diisi ulang dari data tamu,
 	// kecuali pengunjung sudah mengubahnya sendiri.
 	const isPlanTouchedRef = useRef(false);
 	useEffect(() => {
 		if (isPlanTouchedRef.current) return;
 		if (!guest || rsvpStatus !== 'hadir') return;
 		setRsvpEventKey(guest.event_key || '');
-		setRsvpArrival(guest.arrival_time || '');
 	}, [guest, rsvpStatus]);
 
 	// Submit RSVP Form
@@ -86,18 +83,11 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 			return;
 		}
 
-		// Tamu yang hadir wajib menyatakan acara yang diikuti dan jam datangnya
-		if (rsvpStatus === 'hadir') {
-			if (!rsvpEventKey) {
-				setSubmitMsg({ type: 'error', text: 'Silakan pilih acara yang akan Anda ikuti.' });
-				setIsSubmitting(false);
-				return;
-			}
-			if (!rsvpArrival) {
-				setSubmitMsg({ type: 'error', text: 'Silakan isi jam datang Anda di lokasi acara.' });
-				setIsSubmitting(false);
-				return;
-			}
+		// Tamu yang hadir wajib menyatakan acara yang diikuti
+		if (rsvpStatus === 'hadir' && !rsvpEventKey) {
+			setSubmitMsg({ type: 'error', text: 'Silakan pilih acara yang akan Anda ikuti.' });
+			setIsSubmitting(false);
+			return;
 		}
 
 		try {
@@ -110,7 +100,6 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 				name: rsvpName.trim(),
 				comment: rsvpComment.trim(),
 				event_key: rsvpStatus === 'hadir' ? rsvpEventKey : null,
-				arrival_time: rsvpStatus === 'hadir' ? rsvpArrival : null,
 				honeypot: honeypot
 			});
 
@@ -122,7 +111,7 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 						? 'Terima kasih! Konfirmasi kehadiran Anda telah tersimpan. Tiket QR check-in Anda terbit.'
 						: 'Terima kasih! Konfirmasi kehadiran Anda telah tersimpan.'
 				});
-				if (rsvpStatus === 'hadir' && !wasHadirBefore) {
+				if (rsvpStatus === 'hadir') {
 					setTicketOpen(true);
 				}
 				setRsvpComment(''); // Clear input message
@@ -148,6 +137,26 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 					Konfirmasi Kehadiran
 				</h2>
 				<BatikDivider />
+
+				{/* QR ticket requirement notice for guests who don't have a ticket yet */}
+				{guest?.status !== 'hadir' && (
+					<div
+						className="bg-batik-brown/30 border border-gold-gentle/40 text-stone-200 rounded-2xl p-4 mb-6 max-w-lg mx-auto text-left flex items-start gap-3"
+						id="rsvp-ticket-notice"
+					>
+						<QrCode size={16} className="mt-0.5 flex-shrink-0 text-gold-shine" />
+						<div>
+							<p className="text-xs font-semibold text-gold-gentle">
+								Konfirmasi Kehadiran Wajib Diisi
+							</p>
+							<p className="text-[11px] text-stone-300 mt-1 leading-relaxed">
+								Silakan isi konfirmasi kehadiran dan pilih acara yang akan Anda ikuti. Tiket QR
+								check-in terbit otomatis setelah konfirmasi tersimpan, dan tiket tersebut wajib
+								ditunjukkan saat memasuki area acara.
+							</p>
+						</div>
+					</div>
+				)}
 
 				{/* Already responded notice */}
 				{hasResponded && (
@@ -288,7 +297,7 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 						)}
 					</AnimatePresence>
 
-					{/* Acara yang diikuti + Jam datang (Visible only if HADIR) */}
+					{/* Acara yang diikuti (Visible only if HADIR) */}
 					<AnimatePresence>
 						{rsvpStatus === 'hadir' && (
 							<motion.div
@@ -341,27 +350,6 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 										);
 									})}
 								</div>
-
-								<label
-									htmlFor="rsvp-input-arrival"
-									className="block text-xs uppercase tracking-widest text-stone-400 font-bold mt-6 mb-2"
-								>
-									Jam Datang Anda
-								</label>
-								<input
-									id="rsvp-input-arrival"
-									type="time"
-									required={rsvpStatus === 'hadir'}
-									value={rsvpArrival}
-									onChange={(e) => {
-										isPlanTouchedRef.current = true;
-										setRsvpArrival(e.target.value);
-									}}
-									className="w-full bg-stone-850 border border-stone-800 focus:border-gold-gentle focus:outline-none focus:ring-1 focus:ring-gold-gentle rounded-xl p-3.5 text-xs text-stone-100 transition-colors [color-scheme:dark]"
-								/>
-								<p className="text-[10px] text-stone-500 mt-2 leading-relaxed">
-									Isi jam berapa Anda diperkirakan tiba di lokasi, agar kami bisa menyiapkan tempat terbaik untuk Anda.
-								</p>
 								</div>
 							</motion.div>
 						)}

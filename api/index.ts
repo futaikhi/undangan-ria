@@ -340,27 +340,26 @@ app.post('/api/public/invitation/:code/rsvp', rateLimiter(10, 60000), async (req
   const username = (name || '').trim();
   const msg = (comment || '').trim();
 
-  // Tamu yang hadir wajib mengisi acara yang diikuti dan jam datangnya.
+  // Tamu yang hadir wajib mengisi acara yang diikuti. Jam datang bersifat opsional
+  // (tidak lagi dikumpulkan di formulir), sehingga nilai lama di database dipertahankan.
   const rawEventKey = (event_key || '').trim();
+  const hasArrivalField = Object.prototype.hasOwnProperty.call(req.body || {}, 'arrival_time');
   const rawArrival = (arrival_time || '').trim();
-  let nextEventKey: string | null = null;
-  let nextArrival: string | null = null;
 
-  if (status === 'hadir') {
-    if (!RSVP_EVENT_KEYS.includes(rawEventKey)) {
-      return res.status(400).json({ error: 'Silakan pilih acara yang akan Anda ikuti' });
-    }
-    if (!HHMM_RE.test(rawArrival)) {
-      return res.status(400).json({ error: 'Silakan isi jam datang Anda dengan format HH:MM' });
-    }
-    nextEventKey = rawEventKey;
-    nextArrival = rawArrival;
+  if (status === 'hadir' && !RSVP_EVENT_KEYS.includes(rawEventKey)) {
+    return res.status(400).json({ error: 'Silakan pilih acara yang akan Anda ikuti' });
   }
+  if (hasArrivalField && rawArrival && !HHMM_RE.test(rawArrival)) {
+    return res.status(400).json({ error: 'Silakan isi jam datang Anda dengan format HH:MM' });
+  }
+  const nextEventKey: string | null = status === 'hadir' ? rawEventKey : null;
 
   try {
     const guestRs = await db.execute({ sql: 'SELECT * FROM guests WHERE code = ?', args: [code.toUpperCase()] });
     const guest = guestRs.rows[0] as any;
     if (!guest) return res.status(404).json({ error: 'Kode undangan tidak valid' });
+
+    const nextArrival = hasArrivalField ? (rawArrival || null) : (guest.arrival_time || null);
 
     await db.execute({
       sql: 'UPDATE guests SET status = ?, guest_count = ?, event_key = ?, arrival_time = ? WHERE id = ?',
