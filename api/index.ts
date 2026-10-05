@@ -109,6 +109,10 @@ function escapeHtml(text: string): string {
     .replace(/'/g, '&#039;');
 }
 
+// Daftar acara yang boleh dipilih tamu saat konfirmasi kehadiran.
+const RSVP_EVENT_KEYS = ['akad', 'praresepsi', 'resepsi'];
+const HHMM_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 // Guest data encoded as a signed JSON envelope inside the QR.
 // Format: base64url(JSON).hmac — the handler verifies the HMAC
 // signature with the shared JWT_SECRET before trusting the data,
@@ -118,7 +122,9 @@ function buildCheckinPayload(guest: any): string {
     code: guest.code,
     name: guest.name,
     category: guest.category || 'Umum',
-    guestCount: parseInt(guest.guest_count) || 1
+    guestCount: parseInt(guest.guest_count) || 1,
+    event: RSVP_EVENT_KEYS.includes(guest.event_key) ? guest.event_key : null,
+    arrivalTime: guest.arrival_time || null
   });
   const payloadB64 = Buffer.from(data).toString('base64url');
   const sig = createHmac('sha256', JWT_SECRET).update(payloadB64).digest('base64url').slice(0, 16);
@@ -308,6 +314,8 @@ app.get('/api/public/invitation/:code', rateLimiter(100, 60000), async (req, res
         whatsapp: guest.whatsapp,
         status: guest.status,
         guest_count: guest.guest_count,
+        event_key: RSVP_EVENT_KEYS.includes(guest.event_key) ? guest.event_key : null,
+        arrival_time: guest.arrival_time || null,
         opened_count: updatedCount,
         last_opened_at: nowISO,
         status_active: guest.status_active
@@ -323,7 +331,7 @@ app.get('/api/public/invitation/:code', rateLimiter(100, 60000), async (req, res
 
 app.post('/api/public/invitation/:code/rsvp', rateLimiter(10, 60000), async (req, res) => {
   const { code } = req.params;
-  const { status, guest_count, name, comment, honeypot } = req.body;
+  const { status, guest_count, name, comment, honeypot, event_key, arrival_time } = req.body;
 
   if (honeypot) return res.status(400).json({ error: 'Deteksi spam teraktivasi!' });
   if (!status || !['hadir', 'tidak_hadir'].includes(status)) return res.status(400).json({ error: 'Status kehadiran tidak valid' });
@@ -332,12 +340,32 @@ app.post('/api/public/invitation/:code/rsvp', rateLimiter(10, 60000), async (req
   const username = (name || '').trim();
   const msg = (comment || '').trim();
 
+  // Tamu yang hadir wajib mengisi acara yang diikuti dan jam datangnya.
+  const rawEventKey = (event_key || '').trim();
+  const rawArrival = (arrival_time || '').trim();
+  let nextEventKey: string | null = null;
+  let nextArrival: string | null = null;
+
+  if (status === 'hadir') {
+    if (!RSVP_EVENT_KEYS.includes(rawEventKey)) {
+      return res.status(400).json({ error: 'Silakan pilih acara yang akan Anda ikuti' });
+    }
+    if (!HHMM_RE.test(rawArrival)) {
+      return res.status(400).json({ error: 'Silakan isi jam datang Anda dengan format HH:MM' });
+    }
+    nextEventKey = rawEventKey;
+    nextArrival = rawArrival;
+  }
+
   try {
     const guestRs = await db.execute({ sql: 'SELECT * FROM guests WHERE code = ?', args: [code.toUpperCase()] });
     const guest = guestRs.rows[0] as any;
     if (!guest) return res.status(404).json({ error: 'Kode undangan tidak valid' });
 
-    await db.execute({ sql: 'UPDATE guests SET status = ?, guest_count = ? WHERE id = ?', args: [status, numGuest, guest.id] });
+    await db.execute({
+      sql: 'UPDATE guests SET status = ?, guest_count = ?, event_key = ?, arrival_time = ? WHERE id = ?',
+      args: [status, numGuest, nextEventKey, nextArrival, guest.id]
+    });
 
     if (msg.length > 0) {
       const existingRs = await db.execute({ sql: 'SELECT id FROM rsvp_comments WHERE guest_id = ?', args: [guest.id] });
@@ -362,6 +390,8 @@ app.post('/api/public/invitation/:code/rsvp', rateLimiter(10, 60000), async (req
       message: 'Konfirmasi kehadiran berhasil disimpan',
       guestStatus: status,
       guestCount: numGuest,
+      eventKey: nextEventKey,
+      arrivalTime: nextArrival,
       comments: commentsRs.rows
     });
   } catch (err: any) {
@@ -388,6 +418,10 @@ app.get('/api/public/invitation/:code/qr', rateLimiter(30, 60000), async (req, r
     const checkinUrl = buildCheckinUrl(checkinData, settings);
     const qrDataUrl = await renderQrDataUrl(checkinUrl);
 
+    // Rundown acara yang dipilih tamu; jatuh ke resepsi bila belum memilih.
+    const chosenKey = RSVP_EVENT_KEYS.includes(guest.event_key) ? guest.event_key : 'resepsi';
+    const chosenEvent = content?.events?.[chosenKey] || {};
+
     res.json({
       success: true,
       checkinData,
@@ -398,7 +432,11 @@ app.get('/api/public/invitation/:code/qr', rateLimiter(30, 60000), async (req, r
         name: guest.name,
         guestCount: parseInt(guest.guest_count) || 1,
         event: 'Ria & Iqram',
-        eventDate: content?.events?.resepsi?.date || ''
+        eventKey: chosenKey,
+        eventTitle: chosenEvent.title || '',
+        eventTime: chosenEvent.time || '',
+        eventDate: chosenEvent.date || content?.events?.resepsi?.date || '',
+        arrivalTime: guest.arrival_time || null
       }
     });
   } catch (err: any) {
@@ -557,6 +595,20 @@ app.get('/api/admin-undangan-ria-iqram/stats', authenticateAdmin, async (req, re
     const activeCommentsRs = await db.execute({ sql: 'SELECT COUNT(*) as comments FROM rsvp_comments', args: [] });
     const activeComments = activeCommentsRs.rows[0] as any;
 
+    // Rekap jumlah tamu yang memilih tiap acara di rundown
+    const eventBreakdownRs = await db.execute({
+      sql: `SELECT event_key, COUNT(*) as count, SUM(guest_count) as total_guests
+            FROM guests
+            WHERE status = 'hadir' AND event_key IS NOT NULL
+            GROUP BY event_key`,
+      args: []
+    });
+    const eventBreakdown = (eventBreakdownRs.rows as any[]).map((row) => ({
+      event_key: row.event_key,
+      count: row.count,
+      totalGuests: row.total_guests || 0
+    }));
+
     let totalInvited = totals.total || 0;
     let openedCount = totals.total_opens || 0;
     let totalHadirTamu = 0;
@@ -583,6 +635,7 @@ app.get('/api/admin-undangan-ria-iqram/stats', authenticateAdmin, async (req, re
       countTidakHadir,
       countBelumRespon,
       totalComments: activeComments.comments,
+      eventBreakdown,
       auditLogs
     });
   } catch (err: any) {

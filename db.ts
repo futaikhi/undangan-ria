@@ -170,6 +170,26 @@ async function setKV(key: string, value: any) {
   await db.execute({ sql: 'INSERT OR REPLACE INTO app_kv (key, value) VALUES (?, ?)', args: [key, JSON.stringify(value)] });
 }
 
+// Kolom tamu yang ditambahkan setelah tabel pertama kali dibuat.
+// Dijalankan idempoten lewat PRAGMA table_info sehingga aman untuk DB lama.
+const GUEST_COLUMN_MIGRATIONS: Array<[string, string]> = [
+  ['event_key', 'ALTER TABLE guests ADD COLUMN event_key TEXT'],
+  ['arrival_time', 'ALTER TABLE guests ADD COLUMN arrival_time TEXT'],
+];
+
+export async function ensureGuestColumns() {
+  try {
+    const infoRs = await db.execute({ sql: 'PRAGMA table_info(guests)', args: [] });
+    const existing = new Set(infoRs.rows.map((r: any) => String(r.name)));
+    for (const [column, alterSql] of GUEST_COLUMN_MIGRATIONS) {
+      if (existing.has(column)) continue;
+      await db.execute({ sql: alterSql, args: [] });
+    }
+  } catch (err: any) {
+    console.error('Gagal menjalankan migrasi kolom guests:', err);
+  }
+}
+
 export async function bootstrapData() {
   await db.executeMultiple(`
     CREATE TABLE IF NOT EXISTS guests (
@@ -182,7 +202,9 @@ export async function bootstrapData() {
       guest_count INTEGER DEFAULT 0,
       opened_count INTEGER DEFAULT 0,
       last_opened_at TEXT,
-      status_active INTEGER DEFAULT 1
+      status_active INTEGER DEFAULT 1,
+      event_key TEXT,
+      arrival_time TEXT
     );
 
     CREATE TABLE IF NOT EXISTS rsvp_comments (
@@ -200,6 +222,8 @@ export async function bootstrapData() {
       value TEXT NOT NULL
     );
   `);
+
+  await ensureGuestColumns();
 
   const guestRs = await db.execute({ sql: 'SELECT COUNT(*) as count FROM guests', args: [] });
   const guestCount = guestRs.rows[0].count as number;

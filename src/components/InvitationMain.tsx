@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { BatikDivider, BatikMandala, CornerOrnament } from './BatikOrnament';
 import { RSVP } from './RSVP';
+import { BottomNav } from './BottomNav';
 import { Content, Settings, Comment, Guest } from '../types';
 
 interface InvitationMainProps {
@@ -628,6 +629,9 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
           </p>
         </div>
       </footer>
+
+      {/* Floating bottom pill navigation */}
+      <BottomNav />
 
       {/* ZOOM LIGHTBOX POPUP MODULE */}
       <AnimatePresence>

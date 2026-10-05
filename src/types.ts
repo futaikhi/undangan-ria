@@ -9,6 +9,8 @@ export interface Guest {
   opened_count: number;
   last_opened_at: string | null;
   status_active: number; // 1 for active, 0 for disabled
+  event_key: EventKey | null; // acara yang dipilih tamu
+  arrival_time: string | null; // jam datang yang diisi tamu (HH:MM)
 }
 
 export interface Comment {
@@ -52,6 +54,10 @@ export interface Events {
   resepsi: EventDetails;
   praresepsi: EventDetails;
 }
+
+export type EventKey = keyof Events;
+
+export const EVENT_KEYS: EventKey[] = ['akad', 'praresepsi', 'resepsi'];
 
 export interface StoryItem {
   id: number;
@@ -117,5 +123,6 @@ export interface AdminStats {
   countTidakHadir: number;
   countBelumRespon: number;
   totalComments: number;
+  eventBreakdown: { event_key: string; count: number; totalGuests: number }[];
   auditLogs: AuditLog[];
 }

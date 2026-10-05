@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
 	AlertCircle,
 	CheckCircle2,
+	Clock,
 	Download,
 	Mail,
 	RefreshCw,
@@ -18,7 +19,11 @@ interface QrTicketData {
 		name: string;
 		guestCount: number;
 		event: string;
+		eventKey: string;
+		eventTitle: string;
+		eventTime: string;
 		eventDate: string;
+		arrivalTime: string | null;
 	};
 }
 
@@ -173,8 +178,33 @@ const renderTicketCard = async (qr: QrTicketData, content: Content): Promise<str
 	const countText = qr.payload.guestCount > 0 ? ` • ${qr.payload.guestCount} orang` : '';
 	ctx.fillText(`Kode: ${qr.payload.code}${countText}`, W / 2, y);
 
+	// Acara yang dipilih + jam acara dari rundown
+	if (qr.payload.eventTitle) {
+		y += 46;
+		ctx.font = `600 22px ${sans}`;
+		ctx.fillStyle = batik;
+		ctx.fillText(qr.payload.eventTitle.toUpperCase(), W / 2, y);
+
+		if (qr.payload.eventTime) {
+			y += 32;
+			ctx.font = `400 20px ${sans}`;
+			ctx.fillStyle = stone;
+			ctx.fillText(qr.payload.eventTime, W / 2, y);
+		}
+	}
+
+	// Jam datang yang dicatat tamu saat konfirmasi
+	if (qr.payload.arrivalTime) {
+		y += 36;
+		ctx.font = `600 20px ${sans}`;
+		ctx.fillStyle = goldSoft;
+		ctx.fillText(`Jam datang Anda: ${qr.payload.arrivalTime}`, W / 2, y);
+	}
+
 	if (qr.payload.eventDate) {
 		y += 42;
+		ctx.font = `400 24px ${sans}`;
+		ctx.fillStyle = stone;
 		ctx.fillText(qr.payload.eventDate, W / 2, y);
 	}
 
@@ -362,6 +392,32 @@ export const CheckinQRCard: React.FC<CheckinQRCardProps> = ({ guest, content, se
 								<p className="text-center text-[10px] uppercase tracking-widest text-stone-500 font-mono mt-3">
 									Pindai di loket check-in acara
 								</p>
+
+								{/* Ringkasan acara & jam datang yang dicatat saat konfirmasi */}
+								{qr.payload.eventTitle && (
+									<div className="mt-5 bg-stone-850/60 border border-stone-800 rounded-2xl p-4 text-left space-y-2">
+										<p className="text-[10px] uppercase tracking-widest text-stone-500 font-mono font-bold">
+											Acara Anda
+										</p>
+										<p className="text-sm font-semibold text-gold-gradient">
+											{qr.payload.eventTitle}
+										</p>
+										{qr.payload.eventTime && (
+											<p className="flex items-center gap-1.5 text-[11px] text-stone-300 font-mono">
+												<Clock size={11} className="flex-shrink-0" />
+												{qr.payload.eventTime}
+											</p>
+										)}
+										{qr.payload.eventDate && (
+											<p className="text-[11px] text-stone-400">{qr.payload.eventDate}</p>
+										)}
+										{qr.payload.arrivalTime && (
+											<p className="text-[11px] text-stone-300 font-mono pt-2 border-t border-stone-800">
+												Jam datang yang Anda isi: <span className="text-white font-bold">{qr.payload.arrivalTime}</span>
+											</p>
+										)}
+									</div>
+								)}
 
 								{/* Save button */}
 								<div className="mt-5">

@@ -320,6 +320,8 @@ export default function App() {
     guest_count: number;
     name: string;
     comment: string;
+    event_key?: string | null;
+    arrival_time?: string | null;
     honeypot?: string;
   }) => {
     // Determine active code (defaults to RIAIQRAM if they are browsing generic preview)
@@ -339,7 +341,9 @@ export default function App() {
           setGuest({
             ...guest,
             status: rsvpData.status as any,
-            guest_count: rsvpData.guest_count
+            guest_count: rsvpData.guest_count,
+            event_key: (data.eventKey || null) as Guest['event_key'],
+            arrival_time: data.arrivalTime || null
           });
         }
         return { success: true };

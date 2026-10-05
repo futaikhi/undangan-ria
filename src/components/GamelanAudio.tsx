@@ -80,13 +80,13 @@ export const GamelanAudio: React.FC<GamelanAudioProps> = ({ url, autoplay }) => 
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999]">
+    <div className="fixed bottom-6 right-6 z-[9999] transition-all duration-300 gamelan-audio-fab">
       <button
         onClick={togglePlayback}
-        className={`relative flex items-center justify-center w-12 h-12 rounded-full cursor-pointer shadow-lg transition-all duration-300 ${
+        className={`relative flex items-center justify-center w-12 h-12 rounded-full cursor-pointer shadow-lg transition-all duration-300 border ${
           isPlaying
-            ? 'bg-batik-brown text-gold-shine border-gold-gentle animate-pulse border'
-            : 'bg-stone-900 border-stone-800 text-stone-400 border hover:text-white'
+            ? 'bg-transparent text-gold-shine border-gold-shine animate-pulse'
+            : 'bg-transparent border-gold-shine/60 text-gold-shine hover:text-white hover:border-gold-shine'
         }`}
         id="btn-volume-player"
         title={isPlaying ? "Mute Gamelan" : "Play Gamelan"}
@@ -94,7 +94,7 @@ export const GamelanAudio: React.FC<GamelanAudioProps> = ({ url, autoplay }) => 
         {/* Animated wave pulses representing active acoustics */}
         {isPlaying && (
           <>
-            <span className="absolute inline-flex h-full w-full rounded-full bg-batik-brown opacity-75 animate-ping -z-10"></span>
+            <span className="absolute inline-flex h-full w-full rounded-full border-2 border-gold-shine opacity-75 animate-ping -z-10"></span>
             <div className="absolute inset-0 flex items-center justify-around px-3 py-4 opacity-30">
               <span className="w-[2px] h-3 bg-gold-shine rounded h-animate-1"></span>
               <span className="w-[2px] h-2 bg-gold-shine rounded h-animate-2"></span>
@@ -115,6 +115,8 @@ export const GamelanAudio: React.FC<GamelanAudioProps> = ({ url, autoplay }) => 
         .h-animate-1 { animation: soundWave 0.8s ease-in-out infinite; }
         .h-animate-2 { animation: soundWave 1.2s ease-in-out infinite 0.2s; }
         .h-animate-3 { animation: soundWave 1s ease-in-out infinite 0.4s; }
+        /* Lift the music button above the bottom nav when it appears */
+        body.bottom-nav-visible .gamelan-audio-fab { bottom: 5rem; }
       `}</style>
     </div>
   );

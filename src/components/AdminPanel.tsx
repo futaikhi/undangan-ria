@@ -19,9 +19,10 @@ import {
   CheckCircle,
   XCircle,
   Calendar,
+  Clock,
   Smartphone
 } from 'lucide-react';
-import { Guest, Comment, Content, Settings as AppSettings, AuditLog, AdminStats } from '../types';
+import { Guest, Comment, Content, Settings as AppSettings, AuditLog, AdminStats, EVENT_KEYS } from '../types';
 
 interface AdminPanelProps {
   onLogout: () => void;
@@ -476,12 +477,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   // Simple CSV Client-Side Downloader
   const downloadGuestsCSV = () => {
     let csvContent = 'data:text/csv;charset=utf-8,';
-    csvContent += 'Nama Tamu,Kode Unik,Kategori,Nomor WhatsApp,Status RSVP,Tamu Hadir,Jumlah Buka,Tautan Undangan\n';
-    
+    csvContent += 'Nama Tamu,Kode Unik,Kategori,Nomor WhatsApp,Status RSVP,Tamu Hadir,Acara,Jam Datang,Jam Acara,Jumlah Buka,Tautan Undangan\n';
+
     guests.forEach(g => {
       const origin = window.location.origin;
       const inviteUrl = `${origin}/i/${g.code}`;
-      const line = `"${g.name}","${g.code}","${g.category}","${g.whatsapp}","${g.status}",${g.guest_count},${g.opened_count},"${inviteUrl}"`;
+      const eventDetails = g.event_key ? appContent?.events?.[g.event_key] : null;
+      const line = `"${g.name}","${g.code}","${g.category}","${g.whatsapp}","${g.status}",${g.guest_count},"${eventDetails?.title || ''}","${g.arrival_time || ''}","${eventDetails?.time || ''}",${g.opened_count},"${inviteUrl}"`;
       csvContent += line + '\n';
     });
 
@@ -588,6 +590,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
               </div>
               <p className="text-2xl font-bold font-mono text-white mt-2 mb-1">{stats.totalComments}</p>
               <span className="text-[9px] text-stone-500">Pesan di buku tamu</span>
+            </div>
+          </div>
+        )}
+
+        {/* Per-acara attendance breakdown from guest RSVP */}
+        {stats && (stats.eventBreakdown || []).length > 0 && (
+          <div className="bg-stone-900 border border-stone-800 p-4 rounded-2xl mb-8">
+            <div className="flex items-center gap-2 text-white text-xs uppercase tracking-widest font-mono mb-3">
+              <Clock size={12} className="text-gold-gentle" />
+              <span>Hadir per Acara</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {EVENT_KEYS.map((key) => {
+                const bucket = (stats.eventBreakdown || []).find((b) => b.event_key === key);
+                const details = appContent?.events?.[key];
+                return (
+                  <div key={key} className="bg-stone-950 border border-stone-800 rounded-xl p-3">
+                    <p className="text-[10px] uppercase tracking-wider font-mono text-stone-400 truncate">
+                      {details?.title || key}
+                    </p>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <p className="text-xl font-bold font-mono text-white">{bucket?.count || 0}</p>
+                      <span className="text-[10px] text-stone-500 font-mono">
+                        tamu / {bucket?.totalGuests || 0} pax
+                      </span>
+                    </div>
+                    {details?.time && (
+                      <p className="text-[9px] text-stone-500 font-mono mt-1">{details.time}</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -753,6 +787,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                         <th className="py-3 px-2">Tamu & Kategori</th>
                         <th className="py-3 px-2">Kode / Link Undangan</th>
                         <th className="py-3 px-2">Rawuh? (Pax)</th>
+                        <th className="py-3 px-2">Acara & Jam Datang</th>
                         <th className="py-3 px-2">Buka</th>
                         <th className="py-3 px-2 text-center">Aksi Pengiriman WA / Admin</th>
                       </tr>
@@ -760,7 +795,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                     <tbody className="divide-y divide-stone-850">
                       {filteredGuests.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="py-8 text-center text-stone-500 font-mono">
+                          <td colSpan={6} className="py-8 text-center text-stone-500 font-mono">
                             Tidak ditemukan tamu undangan yang sesuai
                           </td>
                         </tr>
@@ -768,7 +803,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                         filteredGuests.map((g) => {
                           const isEditing = editingGuestId === g.id;
                           const guestInviteUrl = `${window.location.origin}/i/${g.code}`;
-                          
+                          const eventDetails = g.event_key ? appContent?.events?.[g.event_key] : undefined;
+
                           return (
                             <tr key={g.id} className="hover:bg-stone-850/30 transition-colors">
                               <td className="py-3 px-2 max-w-xs">
@@ -858,6 +894,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                                     </span>
                                     {g.status === 'hadir' && <p className="text-[10px] mt-0.5 font-bold font-mono text-white">{g.guest_count} Pax</p>}
                                   </div>
+                                )}
+                              </td>
+
+                              <td className="py-3 px-2">
+                                {g.status === 'hadir' && (g.event_key || g.arrival_time) ? (
+                                  <div className="space-y-1">
+                                    {eventDetails && (
+                                      <p className="text-[10px] font-semibold text-gold-gentle leading-tight">
+                                        {eventDetails.title}
+                                      </p>
+                                    )}
+                                    {eventDetails?.time && (
+                                      <p className="text-[9px] text-stone-500 font-mono leading-tight">
+                                        {eventDetails.time}
+                                      </p>
+                                    )}
+                                    {g.arrival_time && (
+                                      <p className="text-[10px] text-white font-mono">
+                                        datang {g.arrival_time}
+                                      </p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] text-stone-600">-</span>
                                 )}
                               </td>
 
@@ -989,8 +1049,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                     Simpan Template
                   </button>
                 </div>
-              </div>
-            )}
+</div>
+        )}
 
             {/* BULK GUESTS MODAL */}
             {showBulkModal && (

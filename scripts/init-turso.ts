@@ -22,7 +22,9 @@ async function main() {
       guest_count INTEGER DEFAULT 0,
       opened_count INTEGER DEFAULT 0,
       last_opened_at TEXT,
-      status_active INTEGER DEFAULT 1
+      status_active INTEGER DEFAULT 1,
+      event_key TEXT,
+      arrival_time TEXT
     );
 
     CREATE TABLE IF NOT EXISTS rsvp_comments (
@@ -40,6 +42,17 @@ async function main() {
       value TEXT NOT NULL
     );
   `);
+
+  const infoRs = await db.execute({ sql: 'PRAGMA table_info(guests)', args: [] });
+  const existing = new Set(infoRs.rows.map((r: any) => String(r.name)));
+  for (const [column, alterSql] of [
+    ['event_key', 'ALTER TABLE guests ADD COLUMN event_key TEXT'],
+    ['arrival_time', 'ALTER TABLE guests ADD COLUMN arrival_time TEXT']
+  ] as Array<[string, string]>) {
+    if (existing.has(column)) continue;
+    await db.execute({ sql: alterSql, args: [] });
+    console.log(`Kolom ${column} ditambahkan ke tabel guests.`);
+  }
 
   console.log('Tables created successfully in Turso.');
   await db.close();

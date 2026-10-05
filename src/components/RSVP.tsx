@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
 	Calendar,
 	CheckCircle2,
+	Clock,
 	Heart,
 	MapPin,
 	Navigation,
@@ -11,7 +12,7 @@ import {
 } from 'lucide-react';
 import { BatikDivider } from './BatikOrnament';
 import { CheckinQRCard } from './CheckinQRCard';
-import { Content, Guest, Settings } from '../types';
+import { Content, EVENT_KEYS, EventKey, Guest, Settings } from '../types';
 
 interface RSVPProps {
 	guest: Guest | null;
@@ -22,6 +23,8 @@ interface RSVPProps {
 		guest_count: number;
 		name: string;
 		comment: string;
+		event_key?: string | null;
+		arrival_time?: string | null;
 		honeypot?: string;
 	}) => Promise<{ success: boolean; error?: string }>;
 }
@@ -37,11 +40,20 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 		guest?.guest_count && guest.guest_count > 0 ? guest.guest_count : 1
 	);
 	const [rsvpName, setRsvpName] = useState<string>(guest?.name || '');
+	const [rsvpEventKey, setRsvpEventKey] = useState<EventKey | ''>(guest?.event_key || '');
+	const [rsvpArrival, setRsvpArrival] = useState<string>(guest?.arrival_time || '');
 	const [rsvpComment, setRsvpComment] = useState<string>('');
 	const [honeypot, setHoneypot] = useState<string>(''); // anti-spam
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submitMsg, setSubmitMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 	const [ticketOpen, setTicketOpen] = useState(false);
+
+	// Daftar acara dari rundown, lengkap dengan jam acara
+	const eventOptions = EVENT_KEYS.map((key) => ({
+		key,
+		title: content.events?.[key]?.title || key,
+		time: content.events?.[key]?.time || ''
+	}));
 
 	// Nama tamu mengikuti data undangan dan tidak boleh diubah oleh pengunjung
 	const isNameLocked = !!guest?.name;
@@ -50,6 +62,16 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 		if (isNameTouchedRef.current) return;
 		if (guest?.name) setRsvpName(guest.name);
 	}, [guest]);
+
+	// Rencana kedatangan (acara + jam datang) diisi ulang dari data tamu,
+	// kecuali pengunjung sudah mengubahnya sendiri.
+	const isPlanTouchedRef = useRef(false);
+	useEffect(() => {
+		if (isPlanTouchedRef.current) return;
+		if (!guest || rsvpStatus !== 'hadir') return;
+		setRsvpEventKey(guest.event_key || '');
+		setRsvpArrival(guest.arrival_time || '');
+	}, [guest, rsvpStatus]);
 
 	// Submit RSVP Form
 	const triggerRSVP = async (e: React.FormEvent) => {
@@ -64,6 +86,20 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 			return;
 		}
 
+		// Tamu yang hadir wajib menyatakan acara yang diikuti dan jam datangnya
+		if (rsvpStatus === 'hadir') {
+			if (!rsvpEventKey) {
+				setSubmitMsg({ type: 'error', text: 'Silakan pilih acara yang akan Anda ikuti.' });
+				setIsSubmitting(false);
+				return;
+			}
+			if (!rsvpArrival) {
+				setSubmitMsg({ type: 'error', text: 'Silakan isi jam datang Anda di lokasi acara.' });
+				setIsSubmitting(false);
+				return;
+			}
+		}
+
 		try {
 			// Ticket modal auto-opens only on the first "hadir" confirmation
 			const wasHadirBefore = guest?.status === 'hadir';
@@ -73,10 +109,13 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 				guest_count: rsvpStatus === 'hadir' ? rsvpCount : 0,
 				name: rsvpName.trim(),
 				comment: rsvpComment.trim(),
+				event_key: rsvpStatus === 'hadir' ? rsvpEventKey : null,
+				arrival_time: rsvpStatus === 'hadir' ? rsvpArrival : null,
 				honeypot: honeypot
 			});
 
 			if (resp.success) {
+				isPlanTouchedRef.current = true;
 				setSubmitMsg({
 					type: 'success',
 					text: rsvpStatus === 'hadir'
@@ -98,6 +137,7 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 	};
 
 	const respondedStatus = guest?.status === 'hadir' ? 'HADIR' : 'TIDAK HADIR';
+	const savedEvent = guest?.event_key ? content.events?.[guest.event_key] : null;
 
 	return (
 		<section className="relative py-24 px-4 bg-stone-900 text-wedding-cream overflow-hidden" id="section-rsvp">
@@ -118,6 +158,12 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 								Konfirmasi Anda tersimpan: {respondedStatus}
 								{guest?.status === 'hadir' && guest.guest_count > 0 ? ` (${guest.guest_count} orang)` : ''}
 							</p>
+							{guest?.status === 'hadir' && (savedEvent || guest?.arrival_time) && (
+								<p className="text-[11px] text-green-200/80 mt-1 font-mono">
+									{savedEvent?.title || 'Acara'}{savedEvent?.time ? ` • ${savedEvent.time}` : ''}
+									{guest?.arrival_time ? ` • datang jam ${guest.arrival_time}` : ''}
+								</p>
+							)}
 							<p className="text-[11px] text-stone-400 mt-1 leading-relaxed">
 								Ingin mengubah jawaban? Silakan perbarui formulir di bawah.
 							</p>
@@ -237,6 +283,85 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 											{num}
 										</button>
 									))}
+								</div>
+							</motion.div>
+						)}
+					</AnimatePresence>
+
+					{/* Acara yang diikuti + Jam datang (Visible only if HADIR) */}
+					<AnimatePresence>
+						{rsvpStatus === 'hadir' && (
+							<motion.div
+								initial={{ opacity: 0, height: 0 }}
+								animate={{ opacity: 1, height: 'auto' }}
+								exit={{ opacity: 0, height: 0 }}
+								className="mb-6 overflow-hidden"
+							>
+								<div role="group" aria-labelledby="rsvp-event-label">
+								<p
+									id="rsvp-event-label"
+									className="block text-xs uppercase tracking-widest text-stone-400 font-bold mb-2"
+								>
+									Hadir di Acara Apa?
+								</p>
+								<div className="space-y-2">
+									{eventOptions.map(({ key, title, time }) => {
+										const isSelected = rsvpEventKey === key;
+										return (
+											<button
+												key={key}
+												type="button"
+												onClick={() => {
+													isPlanTouchedRef.current = true;
+													setRsvpEventKey(key);
+												}}
+												aria-pressed={isSelected}
+												className={`w-full text-left px-4 py-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3 ${isSelected
+													? 'bg-batik-brown border-gold-gentle shadow-md'
+													: 'bg-stone-850 border-stone-800 hover:border-stone-700'
+													}`}
+												id={`rsvp-event-${key}`}
+											>
+												<span className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-gold-shine' : 'border-stone-600'
+													}`}>
+													{isSelected && <span className="w-2 h-2 rounded-full bg-gold-shine"></span>}
+												</span>
+												<span className="min-w-0">
+													<span className={`block text-xs font-semibold ${isSelected ? 'text-white' : 'text-stone-300'}`}>
+														{title}
+													</span>
+													{time && (
+														<span className="flex items-center gap-1 text-[10px] font-mono text-stone-400 mt-0.5">
+															<Clock size={9} className="flex-shrink-0" />
+															{time}
+														</span>
+													)}
+												</span>
+											</button>
+										);
+									})}
+								</div>
+
+								<label
+									htmlFor="rsvp-input-arrival"
+									className="block text-xs uppercase tracking-widest text-stone-400 font-bold mt-6 mb-2"
+								>
+									Jam Datang Anda
+								</label>
+								<input
+									id="rsvp-input-arrival"
+									type="time"
+									required={rsvpStatus === 'hadir'}
+									value={rsvpArrival}
+									onChange={(e) => {
+										isPlanTouchedRef.current = true;
+										setRsvpArrival(e.target.value);
+									}}
+									className="w-full bg-stone-850 border border-stone-800 focus:border-gold-gentle focus:outline-none focus:ring-1 focus:ring-gold-gentle rounded-xl p-3.5 text-xs text-stone-100 transition-colors [color-scheme:dark]"
+								/>
+								<p className="text-[10px] text-stone-500 mt-2 leading-relaxed">
+									Isi jam berapa Anda diperkirakan tiba di lokasi, agar kami bisa menyiapkan tempat terbaik untuk Anda.
+								</p>
 								</div>
 							</motion.div>
 						)}
