@@ -269,41 +269,43 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 						</div>
 					)}
 
-					{/* Submit Button */}
-					<button
-						type="submit"
-						disabled={isSubmitting}
-						className={`w-full py-3.5 rounded-xl bg-gradient-to-r from-batik-brown to-amber-800 text-white border border-gold-gentle text-xs uppercase font-semibold tracking-widest shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:from-amber-800 hover:to-batik-brown'
-							}`}
-						id="rsvp-submit-btn"
-					>
-						<Send size={12} />
-						<span>{isSubmitting ? 'Mengirim...' : 'Kirim Konfirmasi'}</span>
-					</button>
-				</form>
+				{/* Submit Button */}
+				<button
+					type="submit"
+					disabled={isSubmitting}
+					className={`w-full py-3.5 rounded-xl bg-gradient-to-r from-batik-brown to-amber-800 text-white border border-gold-gentle text-xs uppercase font-semibold tracking-widest shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:from-amber-800 hover:to-batik-brown'
+						}`}
+					id="rsvp-submit-btn"
+				>
+					<Send size={12} />
+					<span>{isSubmitting ? 'Mengirim...' : 'Konfirmasi'}</span>
+				</button>
 
-			{/* Check-in ticket: modal entry point for confirmed guests */}
-			{guest?.status === 'hadir' && settings && (
-				<>
+				{/* Check-in ticket entry: opens the ticket modal for confirmed guests */}
+				{guest?.status === 'hadir' && settings && (
 					<button
 						type="button"
 						onClick={() => setTicketOpen(true)}
-						className="mt-6 w-full max-w-lg mx-auto flex items-center justify-center gap-2 py-3.5 rounded-xl bg-stone-900 border border-gold-gentle/40 text-gold-gentle hover:text-white hover:border-gold-gentle transition-all text-[11px] uppercase font-semibold tracking-widest cursor-pointer"
+						className="mt-4 w-full py-3.5 rounded-xl bg-gradient-to-r from-gold-gentle to-gold-shine text-stone-950 border border-gold-shine text-xs uppercase font-bold tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all hover:from-gold-shine hover:to-gold-gentle cursor-pointer"
 						id="checkin-qr-open-btn"
 					>
 						<QrCode size={14} />
 						<span>Lihat / Simpan Tiket Check-in</span>
 					</button>
-					<CheckinQRCard
-						guest={guest}
-						content={content}
-						settings={settings}
-						open={ticketOpen}
-						onClose={() => setTicketOpen(false)}
-					/>
-				</>
+				)}
+			</form>
+
+			{/* Check-in ticket modal */}
+			{guest?.status === 'hadir' && settings && (
+				<CheckinQRCard
+					guest={guest}
+					content={content}
+					settings={settings}
+					open={ticketOpen}
+					onClose={() => setTicketOpen(false)}
+				/>
 			)}
-			</div>
+		</div>
 		</section>
 	);
 };
