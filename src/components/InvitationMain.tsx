@@ -459,6 +459,9 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
         </div>
       </section>
 
+      {/* RSVP ATTENDANCE FORM */}
+      <RSVP guest={guest} content={content} settings={settings} onRsvpSubmit={onRsvpSubmit} />
+
       {/* 5. PHOTO GALLERY MASONRY */}
       <section className="py-24 px-4 bg-stone-900 text-wedding-cream relative" id="section-gallery">
         <div className="max-w-5xl mx-auto text-center">
@@ -548,9 +551,6 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
           </div>
         </div>
       </section>
-
-      {/* 7. RSVP ATTENDANCE FORM */}
-      <RSVP guest={guest} content={content} settings={settings} onRsvpSubmit={onRsvpSubmit} />
 
       {/* 8. LIVE BOOK COMMENTS VIEW */}
       <section className="py-24 px-4 bg-paper-texture-no-image" id="section-messages-list">

@@ -345,13 +345,6 @@ app.post('/api/public/invitation/:code/rsvp', rateLimiter(10, 60000), async (req
   const rawEventKey = (event_key || '').trim();
   const hasArrivalField = Object.prototype.hasOwnProperty.call(req.body || {}, 'arrival_time');
   const rawArrival = (arrival_time || '').trim();
-
-  if (status === 'hadir' && !RSVP_EVENT_KEYS.includes(rawEventKey)) {
-    return res.status(400).json({ error: 'Silakan pilih acara yang akan Anda ikuti' });
-  }
-  if (hasArrivalField && rawArrival && !HHMM_RE.test(rawArrival)) {
-    return res.status(400).json({ error: 'Silakan isi jam datang Anda dengan format HH:MM' });
-  }
   const nextEventKey: string | null = status === 'hadir' ? rawEventKey : null;
 
   try {
@@ -714,6 +707,62 @@ app.post('/api/admin-undangan-ria-iqram/guests/bulk', authenticateAdmin, async (
     res.json({ success: true, count: insertedGuests.length, guests: insertedGuests });
   } catch (err: any) {
     res.status(500).json({ error: 'Gagal mengimpor tamu secara bulk: ' + err.message });
+  }
+});
+
+// Batch-generate signed QR check-in tickets for admin printing.
+// Unlike the public QR endpoint, this does NOT require guest.status === 'hadir'
+// — offline-invited guests who never RSVP'd online still need a QR.
+app.post('/api/admin-undangan-ria-iqram/guests/batch-qr', authenticateAdmin, async (req, res) => {
+  const { codes } = req.body;
+  if (!Array.isArray(codes) || codes.length === 0) {
+    return res.status(400).json({ error: 'Daftar kode tamu tidak valid atau kosong' });
+  }
+  if (codes.length > 500) {
+    return res.status(400).json({ error: 'Maksimal 500 tiket per batch' });
+  }
+
+  try {
+    const content = await readContent();
+    const settings = await readSettings();
+    const tickets: any[] = [];
+
+    for (const rawCode of codes) {
+      const code = String(rawCode).toUpperCase().trim();
+      if (!code) continue;
+      const guestRs = await db.execute({ sql: 'SELECT * FROM guests WHERE code = ?', args: [code] });
+      const guest = guestRs.rows[0] as any;
+      if (!guest) { tickets.push({ code, error: 'Tidak ditemukan' }); continue; }
+      if (guest.status_active === 0) { tickets.push({ code, error: 'Undangan dinonaktifkan' }); continue; }
+
+      const checkinData = buildCheckinPayload(guest);
+      const checkinUrl = buildCheckinUrl(checkinData, settings);
+      const qrDataUrl = await renderQrDataUrl(checkinUrl);
+
+      const chosenKey = RSVP_EVENT_KEYS.includes(guest.event_key) ? guest.event_key : 'resepsi';
+      const chosenEvent = content?.events?.[chosenKey] || {};
+
+      tickets.push({
+        code: guest.code,
+        qrDataUrl,
+        payload: {
+          code: guest.code,
+          name: guest.name,
+          guestCount: parseInt(guest.guest_count) || 1,
+          event: 'Ria & Iqram',
+          eventKey: chosenKey,
+          eventTitle: chosenEvent.title || '',
+          eventTime: chosenEvent.time || '',
+          eventDate: chosenEvent.date || content?.events?.resepsi?.date || '',
+          arrivalTime: guest.arrival_time || null
+        }
+      });
+    }
+
+    addAuditLog('BATCH_QR_GENERATED', `Batch generate ${tickets.length} tiket QR check-in`);
+    res.json({ success: true, tickets });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Gagal membuat batch QR: ' + err.message });
   }
 });
 

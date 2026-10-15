@@ -320,7 +320,6 @@ export default function App() {
     guest_count: number;
     name: string;
     comment: string;
-    event_key?: string | null;
     honeypot?: string;
   }) => {
     // Determine active code (defaults to RIAIQRAM if they are browsing generic preview)

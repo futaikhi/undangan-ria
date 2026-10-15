@@ -2,27 +2,30 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import * as XLSX from 'xlsx';
 import {
-  Users,
-  PlusCircle,
-  Copy,
-  Check,
-  Trash2,
-  Settings,
-  Edit,
-  MessageSquare,
-  Search,
-  Share2,
-  FileText,
-  LogOut,
-  RefreshCw,
-  Eye,
-  CheckCircle,
-  XCircle,
-  Calendar,
-  Clock,
-  Smartphone
+	Users,
+	PlusCircle,
+	Copy,
+	Check,
+	Trash2,
+	Settings,
+	Edit,
+	MessageSquare,
+	Search,
+	Share2,
+	FileText,
+	LogOut,
+	RefreshCw,
+	Eye,
+	CheckCircle,
+	XCircle,
+	Calendar,
+	Clock,
+	Smartphone,
+	Download,
+	QrCode
 } from 'lucide-react';
 import { Guest, Comment, Content, Settings as AppSettings, AuditLog, AdminStats, EVENT_KEYS } from '../types';
+import { generateBatchTicketsZip, downloadBlob, BatchProgress } from '../utils/batchTicket';
 
 interface AdminPanelProps {
   onLogout: () => void;
@@ -52,6 +55,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   // Copy helper feedback tracker
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [copiedWaId, setCopiedWaId] = useState<number | null>(null);
+
+  // Batch ticket generation (local/dev only)
+  const isDev = import.meta.env.DEV;
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<BatchProgress | null>(null);
+  const [batchResult, setBatchResult] = useState<{ count: number; errors: { code: string; error: string }[] } | null>(null);
 
   // New Guest state
   const [newGuest, setNewGuest] = useState({ name: '', category: 'VVIP', whatsapp: '' });
@@ -178,6 +188,51 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     navigator.clipboard.writeText(text);
     setCopiedWaId(guest.id);
     setTimeout(() => setCopiedWaId(null), 2000);
+  };
+
+  // Batch ticket selection helpers
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedIds(prev => {
+      if (prev.size === filteredGuests.length) return new Set();
+      return new Set(filteredGuests.map(g => g.id));
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  // Batch generate + download ZIP of 5×7cm print-ready QR tickets
+  const handleBatchDownload = async () => {
+    if (!appContent || selectedIds.size === 0) return;
+    setIsGeneratingBatch(true);
+    setBatchResult(null);
+    setBatchProgress({ done: 0, total: selectedIds.size, currentName: '' });
+
+    const selectedGuests = guests.filter(g => selectedIds.has(g.id));
+    const codes = selectedGuests.map(g => g.code);
+
+    try {
+      const result = await generateBatchTicketsZip(codes, appContent, (p) => {
+        setBatchProgress(p);
+      });
+      const dateStr = new Date().toISOString().slice(0, 10);
+      downloadBlob(result.blob, `tiket-checkin-batch-${dateStr}.zip`);
+      setBatchResult({ count: result.count, errors: result.errors });
+      clearSelection();
+    } catch (err: any) {
+      setBatchResult({ count: 0, errors: [{ code: '—', error: err.message || 'Gagal membuat ZIP' }] });
+    } finally {
+      setIsGeneratingBatch(false);
+      setBatchProgress(null);
+    }
   };
 
   // Create Guest
@@ -779,11 +834,70 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                   </div>
                 </div>
 
+                {/* Batch ticket generation bar (dev/local only) */}
+                {isDev && (
+                  <div className="border-b border-stone-850 pb-4 mb-4">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-2 text-xs">
+                        <QrCode size={14} className="text-gold-gentle" />
+                        <span className="text-white-gentle font-mono">
+                          {selectedIds.size > 0 ? `${selectedIds.size} tamu dipilih` : 'Pilih tamu untuk generate tiket'}
+                        </span>
+                        {selectedIds.size > 0 && !isGeneratingBatch && (
+                          <button onClick={clearSelection} className="text-stone-500 hover:text-white text-[10px] underline cursor-pointer">
+                            Reset
+                          </button>
+                        )}
+                      </div>
+                      <button
+                        onClick={handleBatchDownload}
+                        disabled={selectedIds.size === 0 || isGeneratingBatch}
+                        className="px-4 py-2 bg-batik-brown hover:bg-amber-800 text-white border border-gold-gentle rounded-lg text-[11px] uppercase font-semibold tracking-widest flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {isGeneratingBatch ? <RefreshCw size={12} className="animate-spin" /> : <Download size={12} />}
+                        <span>{isGeneratingBatch ? 'Memproses...' : 'Generate Tiket ZIP'}</span>
+                      </button>
+                    </div>
+                    {isGeneratingBatch && batchProgress && (
+                      <div className="mt-2 flex items-center gap-2 text-[10px] text-stone-500 font-mono">
+                        <div className="flex-1 bg-stone-950 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className="bg-gold-gentle h-full transition-all"
+                            style={{ width: `${batchProgress.total > 0 ? (batchProgress.done / batchProgress.total) * 100 : 0}%` }}
+                          />
+                        </div>
+                        <span className="whitespace-nowrap">{batchProgress.done}/{batchProgress.total} — {batchProgress.currentName}</span>
+                      </div>
+                    )}
+                    {batchResult && !isGeneratingBatch && (
+                      <div className={`mt-2 text-[10px] font-mono leading-relaxed ${batchResult.count > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {batchResult.count > 0 && `${batchResult.count} tiket berhasil dibuat dan diunduh sebagai ZIP. `}
+                        {batchResult.errors.length > 0 && (
+                          <span className="text-amber-400">
+                            {batchResult.errors.length} gagal: {batchResult.errors.map(e => `${e.code} (${e.error})`).join(', ')}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Table View */}
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs text-white">
                     <thead>
                       <tr className="border-b border-stone-800 text-white uppercase tracking-wider font-mono text-[10px]">
+                        {isDev && (
+                          <th className="py-3 px-2 w-8">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.size > 0 && selectedIds.size === filteredGuests.length}
+                              onChange={toggleSelectAll}
+                              className="accent-amber-600 cursor-pointer w-3.5 h-3.5"
+                              title="Pilih semua tamu"
+                            />
+                          </th>
+                        )}
                         <th className="py-3 px-2">Tamu & Kategori</th>
                         <th className="py-3 px-2">Kode / Link Undangan</th>
                         <th className="py-3 px-2">Rawuh? (Pax)</th>
@@ -795,7 +909,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                     <tbody className="divide-y divide-stone-850">
                       {filteredGuests.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="py-8 text-center text-stone-500 font-mono">
+                          <td colSpan={isDev ? 7 : 6} className="py-8 text-center text-stone-500 font-mono">
                             Tidak ditemukan tamu undangan yang sesuai
                           </td>
                         </tr>
@@ -807,6 +921,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
 
                           return (
                             <tr key={g.id} className="hover:bg-stone-850/30 transition-colors">
+                              {isDev && (
+                                <td className="py-3 px-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedIds.has(g.id)}
+                                    onChange={() => toggleSelect(g.id)}
+                                    className="accent-amber-600 cursor-pointer w-3.5 h-3.5"
+                                  />
+                                </td>
+                              )}
                               <td className="py-3 px-2 max-w-xs">
                                 {isEditing ? (
                                   <div className="space-y-1">
