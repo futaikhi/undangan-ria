@@ -148,9 +148,12 @@ export async function renderPrintTicket(
 	ctx.fillStyle = stone;
 	ctx.fillText('Simpan tiket ini dan bawa saat acara', TICKET_W / 2, 365);
 
-	// QR inside white rounded frame
-	const qrSize = 640;
-	const qrY = 430;
+	// QR inside white rounded frame — vertically centered between header and footer
+	const qrSize = 700;
+	const headerBottom = 385;
+	const footerTop = TICKET_H - 150;
+	const captionSpan = 110 + 72 + 62 + 22;
+	const qrY = Math.round((headerBottom + footerTop - (qrSize + captionSpan)) / 2);
 	ctx.fillStyle = '#ffffff';
 	roundRectPath(ctx, TICKET_W / 2 - qrSize / 2 - 30, qrY - 30, qrSize + 60, qrSize + 60, 48);
 	ctx.fill();
@@ -178,23 +181,8 @@ export async function renderPrintTicket(
 	const countText = ticket.payload.guestCount > 0 ? `  •  ${ticket.payload.guestCount} orang` : '';
 	ctx.fillText(`Kode: ${ticket.payload.code}${countText}`, TICKET_W / 2, y);
 
-	// Event details
-	if (ticket.payload.eventTitle) {
-		y += 56;
-		ctx.font = `600 28px ${sans}`;
-		ctx.fillStyle = batik;
-		ctx.fillText(ticket.payload.eventTitle.toUpperCase(), TICKET_W / 2, y);
-	}
-
-	if (ticket.payload.eventDate) {
-		y += 52;
-		ctx.font = `400 28px ${sans}`;
-		ctx.fillStyle = stone;
-		ctx.fillText(ticket.payload.eventDate, TICKET_W / 2, y);
-	}
-
-	// Footer — positioned dynamically so it never overlaps the content above
-	const footerY = Math.max(y + 64, TICKET_H - 180);
+	// Footer — fixed at bottom, balanced with centered content above
+	const footerY = TICKET_H - 130;
 	ctx.font = `400 24px ${sans}`;
 	ctx.fillStyle = goldSoft;
 	ctx.fillText('Pindai QR ini saat tiba di lokasi acara', TICKET_W / 2, footerY);

@@ -2,11 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
 	AlertCircle,
-	CheckCircle2,
 	Download,
-	Mail,
 	RefreshCw,
-	Send,
 	X
 } from 'lucide-react';
 import { Guest, Content, Settings } from '../types';
@@ -150,9 +147,12 @@ const renderTicketCard = async (qr: QrTicketData, content: Content): Promise<str
 	ctx.fillStyle = stone;
 	ctx.fillText('Simpan tiket ini dan bawa saat acara', W / 2, 282);
 
-	// QR inside a white rounded frame
-	const qrSize = 500;
-	const qrY = 330;
+	// QR inside a white rounded frame — vertically centered between header and footer
+	const qrSize = 540;
+	const headerBottom = 310;
+	const footerTop = H - 134;
+	const captionSpan = 88 + 54 + 48 + 18;
+	const qrY = Math.round((headerBottom + footerTop - (qrSize + captionSpan)) / 2);
 	ctx.fillStyle = '#ffffff';
 	roundRectPath(ctx, W / 2 - qrSize / 2 - 24, qrY - 24, qrSize + 48, qrSize + 48, 36);
 	ctx.fill();
@@ -180,21 +180,6 @@ const renderTicketCard = async (qr: QrTicketData, content: Content): Promise<str
 	const countText = qr.payload.guestCount > 0 ? ` • ${qr.payload.guestCount} orang` : '';
 	ctx.fillText(`Kode: ${qr.payload.code}${countText}`, W / 2, y);
 
-	// Acara yang dipilih
-	if (qr.payload.eventTitle) {
-		y += 46;
-		ctx.font = `600 22px ${sans}`;
-		ctx.fillStyle = batik;
-		ctx.fillText(qr.payload.eventTitle.toUpperCase(), W / 2, y);
-	}
-
-	if (qr.payload.eventDate) {
-		y += 42;
-		ctx.font = `400 24px ${sans}`;
-		ctx.fillStyle = stone;
-		ctx.fillText(qr.payload.eventDate, W / 2, y);
-	}
-
 	// Footer
 	ctx.font = `400 20px ${sans}`;
 	ctx.fillStyle = goldSoft;
@@ -210,9 +195,6 @@ export const CheckinQRCard: React.FC<CheckinQRCardProps> = ({ guest, content, se
 	const [qr, setQr] = useState<QrTicketData | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [email, setEmail] = useState('');
-	const [emailMsg, setEmailMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-	const [isEmailing, setIsEmailing] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 
 	const fetchTicket = useCallback(async () => {
@@ -271,31 +253,6 @@ export const CheckinQRCard: React.FC<CheckinQRCardProps> = ({ guest, content, se
 			a.remove();
 		} finally {
 			setIsSaving(false);
-		}
-	};
-
-	const sendEmail = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setEmailMsg(null);
-		if (!email.trim()) return;
-		setIsEmailing(true);
-		try {
-			const resp = await fetch(`/api/public/invitation/${encodeURIComponent(guest.code)}/qr/email`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email: email.trim(), honeypot: '' })
-			});
-			const data = await resp.json();
-			if (data.success) {
-				setEmailMsg({ type: 'success', text: data.message || 'QR check-in telah dikirim ke email Anda.' });
-				setEmail('');
-			} else {
-				setEmailMsg({ type: 'error', text: data.error || 'Gagal mengirim QR ke email' });
-			}
-		} catch (err: any) {
-			setEmailMsg({ type: 'error', text: 'Koneksi bermasalah: ' + err.message });
-		} finally {
-			setIsEmailing(false);
 		}
 	};
 
@@ -396,59 +353,9 @@ export const CheckinQRCard: React.FC<CheckinQRCardProps> = ({ guest, content, se
 										Tersimpan sebagai kartu tiket berisi QR, nama, dan kode undangan Anda.
 									</p>
 								</div>
-
-								{/* Send to email */}
-								<form onSubmit={sendEmail} className="mt-5 pt-5 border-t border-stone-800">
-									<label className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold mb-2">
-										Kirim QR ke Email
-									</label>
-									<div className="flex gap-2">
-										<input
-											type="email"
-											required
-											value={email}
-											onChange={(e) => setEmail(e.target.value)}
-											placeholder="nama@email.com"
-											autoComplete="email"
-											inputMode="email"
-											className="flex-1 min-w-0 bg-stone-850 border border-stone-800 focus:border-gold-gentle focus:outline-none rounded-xl p-3 text-xs text-stone-100 placeholder-stone-500"
-											id="checkin-qr-email-input"
-										/>
-										<button
-											type="submit"
-											disabled={isEmailing}
-											className="px-4 py-3 rounded-xl bg-stone-850 border border-gold-gentle/50 text-gold-gentle hover:bg-stone-800 hover:text-white transition-all flex items-center justify-center cursor-pointer disabled:opacity-50"
-											id="checkin-qr-email-btn"
-											title="Kirim QR ke email"
-										>
-											{isEmailing ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
-										</button>
-									</div>
-									<AnimatePresence>
-										{emailMsg && (
-											<motion.p
-												initial={{ opacity: 0 }}
-												animate={{ opacity: 1 }}
-												exit={{ opacity: 0 }}
-												className={`text-[11px] mt-2 flex items-start gap-1.5 ${emailMsg.type === 'success' ? 'text-green-400' : 'text-red-400'}`}
-											>
-												{emailMsg.type === 'success' ? (
-													<CheckCircle2 size={12} className="mt-0.5 flex-shrink-0" />
-												) : (
-													<AlertCircle size={12} className="mt-0.5 flex-shrink-0" />
-												)}
-												<span>{emailMsg.text}</span>
-											</motion.p>
-										)}
-									</AnimatePresence>
-									<p className="text-[10px] text-stone-600 mt-2 leading-relaxed flex items-start gap-1.5">
-										<Mail size={10} className="mt-0.5 flex-shrink-0" />
-										<span>QR juga akan dikirim ke alamat email Anda jika server telah dikonfigurasi SMTP.</span>
-									</p>
-								</form>
-							</motion.div>
-						)}
-					</motion.div>
+						</motion.div>
+					)}
+				</motion.div>
 				</motion.div>
 			)}
 		</AnimatePresence>

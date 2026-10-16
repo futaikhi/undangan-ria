@@ -169,30 +169,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     loadDashboardData();
   }, []);
 
-  // WhatsApp bulk builder link helper
-  const getWhatsAppLink = (guest: Guest) => {
+  // WhatsApp message builder — replaces all template placeholders
+  const buildWaMessage = (guest: Guest): string => {
     if (!appSettings) return '';
     const origin = window.location.origin;
     const inviteLink = `${origin}/i/${guest.code}`;
-    
-    let text = appSettings.generalOptions.whatsappGreetingTemplate;
-    text = text.replace('{nama_tamu}', guest.name);
-    text = text.replace('{link_undangan}', inviteLink);
+    const namaKita = appContent ? `${appContent.bride.nickname} & ${appContent.groom.nickname}` : '';
+    const tanggalAcara = appContent ? appContent.events.resepsi.date : '';
 
+    let text = appSettings.generalOptions.whatsappGreetingTemplate;
+    text = text.replaceAll('{nama_tamu}', guest.name);
+    text = text.replaceAll('{nama_kita}', namaKita);
+    text = text.replaceAll('{tanggal_acara}', tanggalAcara);
+    text = text.replaceAll('{kategori}', guest.category);
+    text = text.replaceAll('{link_undangan}', inviteLink);
+    return text;
+  };
+
+  // WhatsApp bulk builder link helper
+  const getWhatsAppLink = (guest: Guest) => {
+    const text = buildWaMessage(guest);
+    if (!text) return '';
     const encodedText = encodeURIComponent(text);
     return `https://api.whatsapp.com/send?phone=${guest.whatsapp}&text=${encodedText}`;
   };
 
   // WhatsApp text template viewer/copier for individual guest
   const handleCopyWaMessage = (guest: Guest) => {
-    if (!appSettings) return;
-    const origin = window.location.origin;
-    const inviteLink = `${origin}/i/${guest.code}`;
-    
-    let text = appSettings.generalOptions.whatsappGreetingTemplate;
-    text = text.replace('{nama_tamu}', guest.name);
-    text = text.replace('{link_undangan}', inviteLink);
-
+    const text = buildWaMessage(guest);
+    if (!text) return;
     navigator.clipboard.writeText(text);
     setCopiedWaId(guest.id);
     setTimeout(() => setCopiedWaId(null), 2000);
@@ -541,13 +546,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   // Simple CSV Client-Side Downloader
   const downloadGuestsCSV = () => {
     let csvContent = 'data:text/csv;charset=utf-8,';
-    csvContent += 'Nama Tamu,Kode Unik,Kategori,Nomor WhatsApp,Status RSVP,Tamu Hadir,Acara,Jam Datang,Jam Acara,Jumlah Buka,Tautan Undangan\n';
+    csvContent += 'Nama Tamu,Kode Unik,Kategori,Nomor WhatsApp,Status RSVP,Tamu Hadir,Jumlah Buka,Tautan Undangan\n';
 
     guests.forEach(g => {
       const origin = window.location.origin;
       const inviteUrl = `${origin}/i/${g.code}`;
-      const eventDetails = g.event_key ? appContent?.events?.[g.event_key] : null;
-      const line = `"${g.name}","${g.code}","${g.category}","${g.whatsapp}","${g.status}",${g.guest_count},"${eventDetails?.title || ''}","${g.arrival_time || ''}","${eventDetails?.time || ''}",${g.opened_count},"${inviteUrl}"`;
+      const line = `"${g.name}","${g.code}","${g.category}","${g.whatsapp}","${g.status}",${g.guest_count},${g.opened_count},"${inviteUrl}"`;
       csvContent += line + '\n';
     });
 
@@ -908,7 +912,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                         <th className="py-3 px-2">Tamu & Kategori</th>
                         <th className="py-3 px-2">Kode / Link Undangan</th>
                         <th className="py-3 px-2">Rawuh? (Pax)</th>
-                        <th className="py-3 px-2">Acara & Jam Datang</th>
                         <th className="py-3 px-2">Buka</th>
                         <th className="py-3 px-2 text-center">Aksi Pengiriman WA / Admin</th>
                       </tr>
@@ -916,7 +919,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                     <tbody className="divide-y divide-stone-850">
                       {filteredGuests.length === 0 ? (
                         <tr>
-                          <td colSpan={isDev ? 7 : 6} className="py-8 text-center text-stone-500 font-mono">
+                          <td colSpan={isDev ? 6 : 5} className="py-8 text-center text-stone-500 font-mono">
                             Tidak ditemukan tamu undangan yang sesuai
                           </td>
                         </tr>
@@ -924,7 +927,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                         filteredGuests.map((g) => {
                           const isEditing = editingGuestId === g.id;
                           const guestInviteUrl = `${window.location.origin}/i/${g.code}`;
-                          const eventDetails = g.event_key ? appContent?.events?.[g.event_key] : undefined;
 
                           return (
                             <tr key={g.id} className="hover:bg-stone-850/30 transition-colors">
@@ -1033,30 +1035,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                                 )}
                               </td>
 
-                              <td className="py-3 px-2">
-                                {g.status === 'hadir' && (g.event_key || g.arrival_time) ? (
-                                  <div className="space-y-1">
-                                    {eventDetails && (
-                                      <p className="text-[10px] font-semibold text-gold-gentle leading-tight">
-                                        {eventDetails.title}
-                                      </p>
-                                    )}
-                                    {eventDetails?.time && (
-                                      <p className="text-[9px] text-stone-500 font-mono leading-tight">
-                                        {eventDetails.time}
-                                      </p>
-                                    )}
-                                    {g.arrival_time && (
-                                      <p className="text-[10px] text-white font-mono">
-                                        datang {g.arrival_time}
-                                      </p>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <span className="text-[10px] text-stone-600">-</span>
-                                )}
-                              </td>
-
                               <td className="py-3 px-2 font-mono">
                                 <p className="text-white text-xs">{g.opened_count}x</p>
                                 <span className="text-[9px] text-stone-500 block leading-none">
@@ -1162,7 +1140,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                 </h3>
                 <p className="text-xs text-white mb-4 font-sans leading-normal">
                   Pesan di bawah ini adalah acuan isi undangan otomatis yang dikirim ke gawai tamu. 
-                  Anda dapat menyertakan penanda <span className="text-white-gentle font-bold font-mono">{`{nama_tamu}`}</span> dan <span className="text-white-gentle font-bold font-mono">{`{link_undangan}`}</span> yang akan digantikan secara otomatis oleh mesin.
+                  Anda dapat menyertakan penanda <span className="text-white-gentle font-bold font-mono">{`{nama_tamu}`}</span>, <span className="text-white-gentle font-bold font-mono">{`{nama_kita}`}</span>, <span className="text-white-gentle font-bold font-mono">{`{tanggal_acara}`}</span>, <span className="text-white-gentle font-bold font-mono">{`{kategori}`}</span>, dan <span className="text-white-gentle font-bold font-mono">{`{link_undangan}`}</span> yang akan digantikan secara otomatis oleh mesin.
                 </p>
 
                 <textarea

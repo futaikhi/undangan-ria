@@ -2,7 +2,6 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import QRCode from 'qrcode';
-import nodemailer, { Transporter } from 'nodemailer';
 import { Jimp } from 'jimp';
 import { createHmac } from 'crypto';
 import path from 'path';
@@ -100,15 +99,6 @@ function generateCustomCode(): string {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
 }
 
 // Daftar acara yang boleh dipilih tamu saat konfirmasi kehadiran.
@@ -259,21 +249,6 @@ async function renderQrDataUrl(text: string): Promise<string> {
 
   const buffer = await qr.getBuffer('image/png');
   return `data:image/png;base64,${buffer.toString('base64')}`;
-}
-
-function buildCheckinSmtpTransport(): Transporter | null {
-  const host = (process.env.SMTP_HOST || '').trim();
-  const user = (process.env.SMTP_USER || '').trim();
-  if (!host || !user) return null;
-  const portRaw = (process.env.SMTP_PORT || '587').trim();
-  const port = parseInt(portRaw) || 587;
-  const pass = process.env.SMTP_PASS || '';
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass: pass || undefined }
-  });
 }
 
 app.get('/api/public/content', async (req, res) => {
@@ -447,76 +422,6 @@ app.get('/api/public/invitation/:code/qr', rateLimiter(30, 60000), async (req, r
     });
   } catch (err: any) {
     res.status(500).json({ error: 'Gagal membuat QR check-in: ' + err.message });
-  }
-});
-
-// Email the check-in QR ticket to the guest's email address (requires SMTP env configuration).
-app.post('/api/public/invitation/:code/qr/email', rateLimiter(3, 60000), async (req, res) => {
-  const { code } = req.params;
-  const { email, honeypot } = req.body || {};
-
-  if (honeypot) return res.status(400).json({ error: 'Deteksi spam teraktivasi!' });
-
-  const target = (email || '').trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target)) {
-    return res.status(400).json({ error: 'Alamat email tidak valid' });
-  }
-
-  try {
-    const guestRs = await db.execute({ sql: 'SELECT * FROM guests WHERE code = ?', args: [code.toUpperCase()] });
-    const guest = guestRs.rows[0] as any;
-    if (!guest) return res.status(404).json({ error: 'Kode undangan tidak ditemukan' });
-    if (guest.status_active === 0) return res.status(403).json({ error: 'Undangan ini dinonaktifkan sementara oleh admin' });
-    if (guest.status !== 'hadir') {
-      return res.status(400).json({ error: 'QR check-in hanya diterbitkan untuk tamu yang mengonfirmasi HADIR' });
-    }
-    if (guest.category === OTHER_CATEGORY) {
-      return res.status(400).json({ error: 'Kategori tamu ini tidak memerlukan tiket check-in' });
-    }
-
-    const content = await readContent();
-    const settings = await readSettings();
-    const checkinData = buildCheckinPayload(guest);
-    const checkinUrl = buildCheckinUrl(checkinData, settings);
-    const qrDataUrl = await renderQrDataUrl(checkinUrl);
-
-    const transporter = buildCheckinSmtpTransport();
-    if (!transporter) {
-      return res.status(501).json({
-        error: 'Pengiriman email belum dikonfigurasi di server (SMTP). Silakan simpan QR langsung dari halaman undangan.'
-      });
-    }
-
-    const guestCount = parseInt(guest.guest_count) || 1;
-    const eventDate = content?.events?.resepsi?.date || '';
-    const safeName = escapeHtml(guest.name);
-    const safeEmail = escapeHtml(target);
-
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
-      to: target,
-      subject: 'Tiket Check-in QR — Undangan Pernikahan Ria & Iqram',
-      html: `
-        <div style="font-family: Georgia, 'Times New Roman', serif; max-width: 480px; margin: 0 auto; padding: 28px 24px; text-align: center; background: #1a1005; color: #f5efe0;">
-          <p style="letter-spacing: 5px; font-size: 11px; color: #d4af37; margin: 0;">DENGAN PENUH SYUKUR</p>
-          <h1 style="font-size: 28px; color: #d4af37; margin: 10px 0 4px;">Iqram &amp; Ria</h1>
-          <p style="font-size: 13px; color: #cbbfa5; margin: 0 0 22px;">Tiket Check-in Kehadiran</p>
-          <div style="background: #fffdf7; border-radius: 18px; padding: 18px; margin: 0 auto 22px; display: inline-block;">
-            <img src="${qrDataUrl}" alt="QR Check-in" width="240" height="240" style="display: block;" />
-          </div>
-          <p style="font-size: 15px; color: #f5efe0; margin: 0 0 4px;">Atas nama: <strong>${safeName}</strong></p>
-          <p style="font-size: 12px; color: #cbbfa5; margin: 0 0 4px;">Kode Undangan: <strong style="color: #d4af37;">${escapeHtml(guest.code)}</strong> &bull; ${guestCount} orang</p>
-          ${eventDate ? `<p style="font-size: 12px; color: #cbbfa5; margin: 0 0 4px;">${escapeHtml(eventDate)}</p>` : ''}
-          <p style="font-size: 11px; color: #8a7d5f; margin: 18px 0 0;">Simpan dan tunjukkan QR ini ketika tiba di lokasi acara.</p>
-          <p style="font-size: 10px; color: #6b5f45; margin: 10px 0 0;">Dikirim untuk ${safeEmail}</p>
-        </div>
-      `
-    });
-
-    addAuditLog('QR_EMAIL_SENT', `QR check-in dikirim ke ${target} untuk tamu ${guest.name}`);
-    res.json({ success: true, message: 'QR check-in telah dikirim ke email Anda' });
-  } catch (err: any) {
-    res.status(500).json({ error: 'Gagal mengirim email: ' + err.message });
   }
 });
 

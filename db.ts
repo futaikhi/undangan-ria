@@ -143,6 +143,13 @@ const defaultContent = {
   ]
 };
 
+const DEFAULT_WA_TEMPLATE = '🌸 *Bismillahirrahmanirrahim* 🌸\n\n*UNDANGAN PERNIKAHAN* 💍✨\n\nYth. {nama_tamu} 🙏\n\nDengan memohon rahmat dan ridho Allah SWT, perkenankan kami menyampaikan kabar bahagia — insya Allah kami akan menikah 🤵👰\n\n━━━━━━━━━━━━━\n\n👰🤵 *{nama_kita}*\n\n📅 Tanggal Acara:\n{tanggal_acara}\n\n🏷️ Kategori Undangan: {kategori}\n\n━━━━━━━━━━━━━\n\n💌 Klik link di bawah ini untuk membuka undangan digital lengkap (acara, lokasi, peta, & konfirmasi kehadiran):\n\n🔗 {link_undangan}\n\n🤍 Kehadiran dan doa restu Anda adalah hadiah terindah bagi kami. Konfirmasi kehadiran dapat dilakukan langsung melalui link undangan di atas ya 🙏\n\nMohon maaf atas segala kekurangan 🙏\n\n Wassalamu\'alaikum Wr. Wb. 🌷\n\nSalam hangat & terima kasih, 🌸\n*{nama_kita}*';
+
+const LEGACY_WA_TEMPLATES = [
+  'Halo Bapak/Ibu {nama_tamu}\n\nDengan penuh kebahagiaan kami mengundang Anda untuk hadir di acara pernikahan kami:\n\nRia & Iqram\n\nBerikut link undangannya:\n{link_undangan}\n\nMerupakan suatu kehormatan bagi kami apabila Anda berkenan hadir.\n\nTerima kasih.',
+  '🎉 *UNDANGAN PERNIKAHAN* 🎉\n\nHalo {nama_tamu}! 👋\n\nDengan memohon rahmat dan ridho Allah SWT, kami bermaksud menyapa Bapak/Ibu/Saudara/i untuk hadir di acara pernikahan:\n\n💍 {nama_kita}\n\n📅 Tanggal Acara: {tanggal_acara}\n📌 Kategori: {kategori}\n\n✨ Berikut link undangan digital kami:\n{link_undangan}\n\nMerupakan suatu kehormatan dan kebahagiaan bagi kami apabila Anda berkenan hadir dan memberikan doa restu. 🤍\n\nKonfirmasi kehadiran dapat dilakukan melalui link di atas. 🙏\n\nTerima kasih 🌸\nSalam hangat,\n{nama_kita}'
+];
+
 const defaultSettings = {
   musicUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
   youtubeLiveUrl: '',
@@ -155,7 +162,7 @@ const defaultSettings = {
   generalOptions: {
     enableCommentsApproval: false,
     enableMusicAutoplay: true,
-    whatsappGreetingTemplate: 'Halo Bapak/Ibu {nama_tamu}\n\nDengan penuh kebahagiaan kami mengundang Anda untuk hadir di acara pernikahan kami:\n\nRia & Iqram\n\nBerikut link undangannya:\n{link_undangan}\n\nMerupakan suatu kehormatan bagi kami apabila Anda berkenan hadir.\n\nTerima kasih.'
+    whatsappGreetingTemplate: DEFAULT_WA_TEMPLATE
   }
 };
 
@@ -267,6 +274,16 @@ export async function bootstrapData() {
       const migrated = { ...content, header: { ...content.quote, imageUrl: '' } };
       delete migrated.quote;
       await db.execute({ sql: 'INSERT OR REPLACE INTO app_kv (key, value) VALUES (?, ?)', args: ['content', JSON.stringify(migrated)] });
+    }
+  }
+
+  const settingsRs = await db.execute({ sql: 'SELECT value FROM app_kv WHERE key = ?', args: ['settings'] });
+  if (settingsRs.rows.length > 0) {
+    const settings = JSON.parse(settingsRs.rows[0].value as string);
+    const currentTpl = settings?.generalOptions?.whatsappGreetingTemplate;
+    if (currentTpl && LEGACY_WA_TEMPLATES.includes(currentTpl)) {
+      const migrated = { ...settings, generalOptions: { ...settings.generalOptions, whatsappGreetingTemplate: DEFAULT_WA_TEMPLATE } };
+      await db.execute({ sql: 'INSERT OR REPLACE INTO app_kv (key, value) VALUES (?, ?)', args: ['settings', JSON.stringify(migrated)] });
     }
   }
 }
