@@ -98,10 +98,19 @@ export interface ThemeColors {
   darkColor: string;
 }
 
+export interface WaTemplate {
+  id: string;
+  label: string;
+  content: string;
+}
+
 export interface GeneralOptions {
   enableCommentsApproval: boolean;
   enableMusicAutoplay: boolean;
-  whatsappGreetingTemplate: string;
+  whatsappGreetingTemplate: string; // fallback lama, dipakai bila waTemplates kosong
+  waTemplates: WaTemplate[];
+  defaultTemplateId: string | null;
+  categoryTemplateMap: Record<string, string>;
 }
 
 export interface Settings {

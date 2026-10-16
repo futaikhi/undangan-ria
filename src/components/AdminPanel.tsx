@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import * as XLSX from 'xlsx';
 import {
@@ -22,14 +22,109 @@ import {
 	Clock,
 	Smartphone,
 	Download,
-	QrCode
+	QrCode,
+	ChevronDown
 } from 'lucide-react';
-import { Guest, Comment, Content, Settings as AppSettings, AuditLog, AdminStats, EVENT_KEYS, OTHER_CATEGORY } from '../types';
+import { Guest, Comment, Content, Settings as AppSettings, AuditLog, AdminStats, EVENT_KEYS, OTHER_CATEGORY, WaTemplate, GeneralOptions } from '../types';
 import { generateBatchTicketsZip, downloadBlob, BatchProgress } from '../utils/batchTicket';
 
 interface AdminPanelProps {
   onLogout: () => void;
 }
+
+function resolveWaTemplateContent(opts: GeneralOptions | undefined | null, category: string | undefined | null): string {
+  if (!opts) return '';
+  const templates = Array.isArray(opts.waTemplates) ? opts.waTemplates : [];
+  if (templates.length > 0) {
+    const pick = (id?: string | null) => templates.find(t => t.id === id);
+    if (category) {
+      const mappedId = opts.categoryTemplateMap?.[category];
+      const mapped = mappedId ? pick(mappedId) : undefined;
+      if (mapped) return mapped.content;
+    }
+    const def = pick(opts.defaultTemplateId);
+    if (def) return def.content;
+    return templates[0].content;
+  }
+  return opts.whatsappGreetingTemplate || '';
+}
+
+const CategoryMultiSelect: React.FC<{
+  categories: string[];
+  selected: string[];
+  takenByOthers?: Record<string, string>;
+  onChange: (next: string[]) => void;
+}> = ({ categories, selected, takenByOthers = {}, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const selectedSet = new Set(selected);
+
+  const toggle = (cat: string) => {
+    const next = new Set(selectedSet);
+    if (next.has(cat)) next.delete(cat);
+    else next.add(cat);
+    onChange(categories.filter(c => next.has(c)));
+  };
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex flex-wrap items-center gap-1 min-h-[38px] bg-stone-950 border border-stone-800 focus:border-gold-gentle focus:outline-none rounded-lg pl-2 pr-9 py-1.5 text-left"
+      >
+        {selected.length === 0 ? (
+          <span className="text-[11px] text-stone-500 font-mono">Pilih kategori…</span>
+        ) : (
+          selected.map(cat => (
+            <span key={cat} className="inline-flex items-center gap-1 bg-stone-800 text-white-gentle text-[10px] font-mono px-1.5 py-0.5 rounded">
+              {cat}
+              <span
+                role="button"
+                onClick={(e) => { e.stopPropagation(); toggle(cat); }}
+                className="cursor-pointer text-stone-400 hover:text-red-400 leading-none"
+              >×</span>
+            </span>
+          ))
+        )}
+      </button>
+      <ChevronDown
+        size={15}
+        className={`absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+      />
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-[1040]" onClick={() => setOpen(false)} />
+          <div className="absolute z-[1050] mt-1 w-full bg-stone-900 border border-stone-700 rounded-lg shadow-xl max-h-56 overflow-y-auto">
+            {categories.map(cat => {
+              const isSelected = selectedSet.has(cat);
+              const takenLabel = takenByOthers[cat];
+              const disabled = !!takenLabel && !isSelected;
+              return (
+                <label
+                  key={cat}
+                  className={`flex items-center gap-2 px-3 py-1.5 text-xs font-sans ${disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-stone-800 cursor-pointer'} ${isSelected ? 'text-white-gentle' : 'text-white'}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    disabled={disabled}
+                    onChange={() => toggle(cat)}
+                    className="accent-gold-gentle"
+                  />
+                  <span>{cat}</span>
+                  {disabled && (
+                    <span className="ml-auto text-[9px] text-stone-500 font-mono truncate max-w-[120px]">↳ {takenLabel}</span>
+                  )}
+                </label>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   // Stats
@@ -92,6 +187,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const [contentForm, setContentForm] = useState<Content | null>(null);
   const [contentSubTab, setContentSubTab] = useState<'bride' | 'header' | 'events' | 'story' | 'gifts' | 'gallery'>('bride');
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+
+  // Toast notification (replaces native alert)
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const toastTimer = useRef<number | null>(null);
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ msg, type });
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 3200);
+  };
 
   const syncFormFromContent = (content: Content) => {
     setContentForm(JSON.parse(JSON.stringify(content)));
@@ -177,7 +281,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     const namaKita = appContent ? `${appContent.bride.nickname} & ${appContent.groom.nickname}` : '';
     const tanggalAcara = appContent ? appContent.events.resepsi.date : '';
 
-    let text = appSettings.generalOptions.whatsappGreetingTemplate;
+    let text = resolveWaTemplateContent(appSettings.generalOptions, guest.category);
     text = text.replaceAll('{nama_tamu}', guest.name);
     text = text.replaceAll('{nama_kita}', namaKita);
     text = text.replaceAll('{tanggal_acara}', tanggalAcara);
@@ -201,6 +305,77 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     navigator.clipboard.writeText(text);
     setCopiedWaId(guest.id);
     setTimeout(() => setCopiedWaId(null), 2000);
+  };
+
+  // Multi-template management helpers (immutable updates on appSettings)
+  const updateTemplate = (id: string, patch: Partial<WaTemplate>) => {
+    if (!appSettings) return;
+    const next = { ...appSettings };
+    next.generalOptions = {
+      ...next.generalOptions,
+      waTemplates: (next.generalOptions.waTemplates || []).map(t => (t.id === id ? { ...t, ...patch } : t)),
+    };
+    setAppSettings(next);
+  };
+
+  const addTemplate = () => {
+    if (!appSettings) return;
+    const id = 'tpl_' + Math.random().toString(36).slice(2, 8);
+    const next = { ...appSettings };
+    next.generalOptions = {
+      ...next.generalOptions,
+      waTemplates: [...(next.generalOptions.waTemplates || []), { id, label: 'Template Baru', content: '' }],
+    };
+    setAppSettings(next);
+  };
+
+  const removeTemplate = (id: string) => {
+    if (!appSettings) return;
+    const go = appSettings.generalOptions;
+    if ((go.waTemplates || []).length <= 1) return;
+    const remaining = (go.waTemplates || []).filter(t => t.id !== id);
+    const fallbackId = go.defaultTemplateId === id ? (remaining[0]?.id ?? null) : go.defaultTemplateId;
+    const nextMap: Record<string, string> = {};
+    for (const [cat, tid] of Object.entries(go.categoryTemplateMap || {})) {
+      nextMap[cat] = tid === id ? (fallbackId ?? '') : tid;
+    }
+    const next = { ...appSettings };
+    next.generalOptions = { ...go, waTemplates: remaining, defaultTemplateId: fallbackId, categoryTemplateMap: nextMap };
+    setAppSettings(next);
+  };
+
+  const categoriesForTemplate = (templateId: string): string[] => {
+    if (!appSettings) return [];
+    const map = appSettings.generalOptions.categoryTemplateMap || {};
+    return categories.filter(cat => map[cat] === templateId);
+  };
+
+  const categoriesTakenByOthers = (templateId: string): Record<string, string> => {
+    if (!appSettings) return {};
+    const map = appSettings.generalOptions.categoryTemplateMap || {};
+    const tpls = appSettings.generalOptions.waTemplates || [];
+    const result: Record<string, string> = {};
+    for (const [cat, tid] of Object.entries(map)) {
+      if (tid && tid !== templateId) {
+        const t = tpls.find(x => x.id === tid);
+        result[cat] = t?.label || t?.id || tid;
+      }
+    }
+    return result;
+  };
+
+  const assignCategoriesToTemplate = (templateId: string, selected: string[]) => {
+    if (!appSettings) return;
+    const next = { ...appSettings };
+    const map = { ...(next.generalOptions.categoryTemplateMap || {}) };
+    for (const cat of Object.keys(map)) {
+      if (map[cat] === templateId) delete map[cat];
+    }
+    for (const cat of selected) {
+      map[cat] = templateId;
+    }
+    next.generalOptions = { ...next.generalOptions, categoryTemplateMap: map };
+    setAppSettings(next);
   };
 
   // Batch ticket selection helpers
@@ -265,10 +440,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         setNewGuest({ name: '', category: 'Keluarga', whatsapp: '' });
         loadDashboardData(); // Reload statistics
       } else {
-        alert(data.error || 'Gagal mendaftarkan tamu');
+        showToast(data.error || 'Gagal mendaftarkan tamu', 'error');
       }
     } catch {
-      alert('Kegagalan jaringan');
+      showToast('Kegagalan jaringan', 'error');
     } finally {
       setIsCreatingGuest(false);
     }
@@ -292,7 +467,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
       }).filter(g => g.name.length > 0);
 
       if (parsedGuests.length === 0) {
-        alert('Format teks tidak valid');
+        showToast('Format teks tidak valid', 'error');
         setIsImportingBulk(false);
         return;
       }
@@ -308,12 +483,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         setBulkInput('');
         setShowBulkModal(false);
         loadDashboardData();
-        alert(`Berhasil mengimpor ${data.count} tamu sekaligus!`);
+        showToast(`Berhasil mengimpor ${data.count} tamu sekaligus!`);
       } else {
-        alert(data.error || 'Gagal mengimpor daftar tamu');
+        showToast(data.error || 'Gagal mengimpor daftar tamu', 'error');
       }
     } catch {
-      alert('Kegagalan jaringan');
+      showToast('Kegagalan jaringan', 'error');
     } finally {
       setIsImportingBulk(false);
     }
@@ -351,7 +526,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         setExcelPreview(parsed);
         setExcelFileName(file.name);
       } catch (err) {
-        alert('Gagal membaca file Excel: ' + (err as any).message);
+        showToast('Gagal membaca file Excel: ' + (err as any).message, 'error');
       }
     };
     reader.readAsBinaryString(file);
@@ -373,12 +548,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         setExcelFileName('');
         setShowBulkModal(false);
         loadDashboardData();
-        alert(`Berhasil mengimpor ${data.count} tamu dari Excel!`);
+        showToast(`Berhasil mengimpor ${data.count} tamu dari Excel!`);
       } else {
-        alert(data.error || 'Gagal mengimpor dari Excel');
+        showToast(data.error || 'Gagal mengimpor dari Excel', 'error');
       }
     } catch {
-      alert('Kegagalan jaringan');
+      showToast('Kegagalan jaringan', 'error');
     } finally {
       setIsImportingExcel(false);
     }
@@ -393,10 +568,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
       if (data.success) {
         setImages(data.images || []);
       } else {
-        alert('Gagal memuat galeri gambar: ' + (data.error || 'Unknown error'));
+        showToast('Gagal memuat galeri gambar: ' + (data.error || 'Unknown error'), 'error');
       }
     } catch (err: any) {
-      alert('Gagal memuat galeri gambar: ' + (err.message || 'Network error'));
+      showToast('Gagal memuat galeri gambar: ' + (err.message || 'Network error'), 'error');
     }
   };
 
@@ -434,7 +609,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         loadDashboardData();
       }
     } catch {
-      alert('Gagal memperbarui status');
+      showToast('Gagal memperbarui status', 'error');
     }
   };
 
@@ -452,10 +627,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         loadDashboardData();
       } else {
         const err = await resp.json();
-        alert(err.error || 'Gagal memperbarui');
+        showToast(err.error || 'Gagal memperbarui', 'error');
       }
     } catch {
-      alert('Gagal memperbarui');
+      showToast('Gagal memperbarui', 'error');
     }
   };
 
@@ -468,7 +643,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         loadDashboardData();
       }
     } catch {
-      alert('Gagal mendepak tamu');
+      showToast('Gagal mendepak tamu', 'error');
     }
   };
 
@@ -481,7 +656,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         loadDashboardData();
       }
     } catch {
-      alert('Gagal menghapus komentar');
+      showToast('Gagal menghapus komentar', 'error');
     }
   };
 
@@ -498,7 +673,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         loadDashboardData();
       }
     } catch {
-      alert('Gagal memperbarui persetujuan');
+      showToast('Gagal memperbarui persetujuan', 'error');
     }
   };
 
@@ -535,11 +710,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
       });
       if (resp.ok) {
         setAppSettings(updatedSettings);
-        alert('Skema template WhatsApp berhasil disimpan!');
+        showToast('Skema template WhatsApp berhasil disimpan!');
         loadDashboardData();
       }
     } catch {
-      alert('Gagal menyimpan settings');
+      showToast('Gagal menyimpan settings', 'error');
     }
   };
 
@@ -752,15 +927,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-white mb-1">Kategori</label>
-                      <select
-                        value={newGuest.category}
-                        onChange={(e) => setNewGuest({ ...newGuest, category: e.target.value })}
-                        className="w-full bg-stone-950 border border-stone-800 rounded-xl p-3 focus:border-gold-gentle focus:outline-none"
-                      >
-                        {categories.map((cat) => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
+                      <div className="relative">
+                        <select
+                          value={newGuest.category}
+                          onChange={(e) => setNewGuest({ ...newGuest, category: e.target.value })}
+                          className="w-full appearance-none bg-stone-950 border border-stone-800 rounded-xl pl-3 pr-9 py-3 focus:border-gold-gentle focus:outline-none"
+                        >
+                          {categories.map((cat) => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                        <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
+                      </div>
                     </div>
 
                     <div>
@@ -812,27 +990,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                   </div>
 
                   <div className="flex items-center gap-2 w-full sm:w-auto text-xs">
-                    <select
-                      value={filterCategory}
-                      onChange={(e) => setFilterCategory(e.target.value)}
-                      className="bg-stone-950 border border-stone-800 rounded-lg p-2 focus:outline-none"
-                    >
-                      <option value="Semua">Semua Kategori</option>
-                      {categories.map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={filterCategory}
+                        onChange={(e) => setFilterCategory(e.target.value)}
+                        className="appearance-none bg-stone-950 border border-stone-800 rounded-lg pl-2 pr-8 py-2 focus:outline-none"
+                      >
+                        <option value="Semua">Semua Kategori</option>
+                        {categories.map((cat) => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
+                    </div>
 
-                    <select
-                      value={filterStatus}
-                      onChange={(e) => setFilterStatus(e.target.value)}
-                      className="bg-stone-950 border border-stone-800 rounded-lg p-2 focus:outline-none"
-                    >
-                      <option value="Semua">Semua Status</option>
-                      <option value="hadir">Sanggup Hadir (Y)</option>
-                      <option value="tidak_hadir">Absen (N)</option>
-                      <option value="belum_respon">Menunggu (?)</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        className="appearance-none bg-stone-950 border border-stone-800 rounded-lg pl-2 pr-8 py-2 focus:outline-none"
+                      >
+                        <option value="Semua">Semua Status</option>
+                        <option value="hadir">Sanggup Hadir (Y)</option>
+                        <option value="tidak_hadir">Absen (N)</option>
+                        <option value="belum_respon">Menunggu (?)</option>
+                      </select>
+                      <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
+                    </div>
 
                     <button
                       onClick={downloadGuestsCSV}
@@ -951,15 +1135,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                                       onChange={(e) => setEditGuestForm({ ...editGuestForm, name: e.target.value })}
                                       className="bg-stone-950 border border-stone-800 p-1.5 rounded text-xs w-full"
                                     />
-                                    <select
-                                      value={editGuestForm.category || ''}
-                                      onChange={(e) => setEditGuestForm({ ...editGuestForm, category: e.target.value })}
-                                      className="bg-stone-950 border border-stone-800 p-1.5 rounded text-xs w-full"
-                                    >
-                                      {categories.map((cat) => (
-                                        <option key={cat} value={cat}>{cat}</option>
-                                      ))}
-                                    </select>
+                                    <div className="relative">
+                                      <select
+                                        value={editGuestForm.category || ''}
+                                        onChange={(e) => setEditGuestForm({ ...editGuestForm, category: e.target.value })}
+                                        className="appearance-none bg-stone-950 border border-stone-800 pl-1.5 pr-7 py-1.5 rounded text-xs w-full"
+                                      >
+                                        {categories.map((cat) => (
+                                          <option key={cat} value={cat}>{cat}</option>
+                                        ))}
+                                      </select>
+                                      <ChevronDown size={12} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
+                                    </div>
                                   </div>
                                 ) : (
                                   <div>
@@ -1005,15 +1192,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                               <td className="py-3 px-2">
                                 {isEditing ? (
                                   <div className="space-y-1 text-[10px]">
-                                    <select
-                                      value={editGuestForm.status || 'belum_respon'}
-                                      onChange={(e) => setEditGuestForm({ ...editGuestForm, status: e.target.value as any })}
-                                      className="bg-stone-950 border border-stone-800 rounded p-1"
-                                    >
-                                      <option value="belum_respon">Menunggu</option>
-                                      <option value="hadir">Hadir</option>
-                                      <option value="tidak_hadir">Absen</option>
-                                    </select>
+                                    <div className="relative">
+                                      <select
+                                        value={editGuestForm.status || 'belum_respon'}
+                                        onChange={(e) => setEditGuestForm({ ...editGuestForm, status: e.target.value as any })}
+                                        className="appearance-none bg-stone-950 border border-stone-800 rounded pl-1 pr-6 py-1"
+                                      >
+                                        <option value="belum_respon">Menunggu</option>
+                                        <option value="hadir">Hadir</option>
+                                        <option value="tidak_hadir">Absen</option>
+                                      </select>
+                                      <ChevronDown size={11} className="absolute right-1 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
+                                    </div>
                                     <input
                                       type="number"
                                       value={editGuestForm.guest_count || 1}
@@ -1132,29 +1322,102 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
 
             </div>
 
-            {/* WA General Template configuration section */}
+            {/* WA Multi-Template configuration section */}
             {appSettings && (
               <div className="bg-stone-900 border border-stone-800 rounded-2xl p-6 shadow max-w-2xl">
                 <h3 className="text-xs uppercase font-mono tracking-widest text-white-gentle font-bold mb-3">
-                  Edit Template Pesan WhatsApp Undangan
+                  Template Pesan WhatsApp Undangan
                 </h3>
                 <p className="text-xs text-white mb-4 font-sans leading-normal">
-                  Pesan di bawah ini adalah acuan isi undangan otomatis yang dikirim ke gawai tamu. 
-                  Anda dapat menyertakan penanda <span className="text-white-gentle font-bold font-mono">{`{nama_tamu}`}</span>, <span className="text-white-gentle font-bold font-mono">{`{nama_kita}`}</span>, <span className="text-white-gentle font-bold font-mono">{`{tanggal_acara}`}</span>, <span className="text-white-gentle font-bold font-mono">{`{kategori}`}</span>, dan <span className="text-white-gentle font-bold font-mono">{`{link_undangan}`}</span> yang akan digantikan secara otomatis oleh mesin.
+                  Buat satu atau lebih template pesan, lalu tempelkan ke kategori tamu tertentu. Tamu dengan kategori yang belum dipetakan akan memakai template default. Penanda yang tersedia:{' '}
+                  <span className="text-white-gentle font-bold font-mono">{`{nama_tamu}`}</span>,{' '}
+                  <span className="text-white-gentle font-bold font-mono">{`{nama_kita}`}</span>,{' '}
+                  <span className="text-white-gentle font-bold font-mono">{`{tanggal_acara}`}</span>,{' '}
+                  <span className="text-white-gentle font-bold font-mono">{`{kategori}`}</span>, dan{' '}
+                  <span className="text-white-gentle font-bold font-mono">{`{link_undangan}`}</span> digantikan otomatis.
                 </p>
 
-                <textarea
-                  rows={6}
-                  value={appSettings.generalOptions.whatsappGreetingTemplate}
-                  onChange={(e) => {
-                    const next = { ...appSettings };
-                    next.generalOptions.whatsappGreetingTemplate = e.target.value;
-                    setAppSettings(next);
-                  }}
-                  className="w-full bg-stone-950 border border-stone-800 focus:border-gold-gentle focus:outline-none rounded-xl p-3.5 text-xs text-stone-100 font-mono"
-                />
+                <div className="flex items-center gap-3 mb-5">
+                  <label className="text-[11px] uppercase tracking-widest text-white font-mono whitespace-nowrap">Template Default</label>
+                  <div className="relative flex-1">
+                    <select
+                      value={appSettings.generalOptions.defaultTemplateId || ''}
+                      onChange={(e) => {
+                        const next = { ...appSettings };
+                        next.generalOptions = { ...next.generalOptions, defaultTemplateId: e.target.value || null };
+                        setAppSettings(next);
+                      }}
+                      className="w-full appearance-none bg-stone-950 border border-stone-800 focus:border-gold-gentle focus:outline-none rounded-xl pl-3 pr-9 py-2 text-xs text-stone-100 font-mono"
+                    >
+                      {(appSettings.generalOptions.waTemplates || []).map(t => (
+                        <option key={t.id} value={t.id}>{t.label || t.id}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
+                  </div>
+                </div>
 
-                <div className="flex items-center justify-between mt-4">
+                <div className="space-y-4">
+                  {(appSettings.generalOptions.waTemplates || []).map((tpl, idx) => (
+                    <div key={tpl.id} className="border border-stone-800 rounded-xl p-3 bg-stone-950/40">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          value={tpl.label}
+                          onChange={(e) => updateTemplate(tpl.id, { label: e.target.value })}
+                          placeholder={`Nama template #${idx + 1}`}
+                          className="flex-1 bg-stone-950 border border-stone-800 focus:border-gold-gentle focus:outline-none rounded-lg px-3 py-1.5 text-xs text-stone-100 font-mono"
+                        />
+                        <button
+                          onClick={() => removeTemplate(tpl.id)}
+                          disabled={(appSettings.generalOptions.waTemplates || []).length <= 1}
+                          title="Hapus template"
+                          className="p-1.5 text-red-400 hover:text-red-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                      <textarea
+                        rows={6}
+                        value={tpl.content}
+                        onChange={(e) => updateTemplate(tpl.id, { content: e.target.value })}
+                        className="w-full bg-stone-950 border border-stone-800 focus:border-gold-gentle focus:outline-none rounded-xl p-3.5 text-xs text-stone-100 font-mono"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={addTemplate}
+                  className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 border border-stone-700 hover:border-gold-gentle text-white text-[11px] uppercase tracking-widest font-mono rounded-lg cursor-pointer transition"
+                >
+                  <PlusCircle size={14} /> Tambah Template
+                </button>
+
+                <div className="mt-6 pt-5 border-t border-stone-800">
+                  <h4 className="text-[11px] uppercase font-mono tracking-widest text-white-gentle font-bold mb-3">
+                    Tempel Template ke Kategori Tamu
+                  </h4>
+                  <div className="space-y-3">
+                    {(appSettings.generalOptions.waTemplates || []).map(tpl => (
+                      <div key={tpl.id} className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-2 items-start">
+                        <div className="text-xs text-white font-mono pt-2 truncate" title={tpl.label || tpl.id}>
+                          {tpl.label || tpl.id}
+                        </div>
+                        <CategoryMultiSelect
+                          categories={categories}
+                          selected={categoriesForTemplate(tpl.id)}
+                          takenByOthers={categoriesTakenByOthers(tpl.id)}
+                          onChange={(sel) => assignCategoriesToTemplate(tpl.id, sel)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-stone-500 font-mono mt-2">
+                    Satu kategori hanya dapat menempel pada satu template. Kategori yang tak dipilih memakai template default.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between mt-5">
                   <span className="text-[10px] text-stone-500 font-mono">Format: Raw text + Autoreplace indicators ready</span>
                   <button
                     onClick={() => handleUpdateSettings(appSettings)}
@@ -1163,7 +1426,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                     Simpan Template
                   </button>
                 </div>
-</div>
+              </div>
         )}
 
             {/* BULK GUESTS MODAL */}
@@ -1196,15 +1459,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                    <form onSubmit={handleBulkImport} className="space-y-4">
                      <div>
                        <label className="block text-xs uppercase tracking-widest text-white mb-1">Kategori Default (Jika baris tidak menyebutkan)</label>
-                        <select
-                          value={bulkCategory}
-                          onChange={(e) => setBulkCategory(e.target.value)}
-                          className="w-full bg-stone-950 border border-stone-800 rounded-xl p-3 focus:border-gold-gentle focus:outline-none text-xs"
-                        >
-                          {categories.map((cat) => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                        </select>
+                        <div className="relative">
+                          <select
+                            value={bulkCategory}
+                            onChange={(e) => setBulkCategory(e.target.value)}
+                            className="w-full appearance-none bg-stone-950 border border-stone-800 rounded-xl pl-3 pr-9 py-3 focus:border-gold-gentle focus:outline-none text-xs"
+                          >
+                            {categories.map((cat) => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                          </select>
+                          <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
+                        </div>
                      </div>
 
                      <div className="border-t border-stone-800 pt-4">
@@ -1688,6 +1954,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
             </div>
           </div>
         )}
+
+      {/* Toast notification */}
+      {toast && (
+        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[2000] px-4 py-3 rounded-xl shadow-2xl border text-xs font-mono flex items-center gap-2 ${toast.type === 'error' ? 'bg-red-950 border-red-800 text-red-200' : 'bg-stone-900 border-gold-gentle text-white-gentle'}`}>
+          <span className={toast.type === 'error' ? 'text-red-400' : 'text-gold-shine'}>{toast.type === 'error' ? '⚠' : '✓'}</span>
+          <span>{toast.msg}</span>
+        </div>
+      )}
 
       </div>
     </div>

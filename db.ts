@@ -145,13 +145,32 @@ const defaultContent = {
 
 const DEFAULT_WA_TEMPLATE = '🌸 *Bismillahirrahmanirrahim* 🌸\n\n*UNDANGAN PERNIKAHAN* 💍✨\n\nYth. {nama_tamu} 🙏\n\nDengan memohon rahmat dan ridho Allah SWT, perkenankan kami menyampaikan kabar bahagia — insya Allah kami akan menikah 🤵👰\n\n━━━━━━━━━━━━━\n\n👰🤵 *{nama_kita}*\n\n📅 Tanggal Acara:\n{tanggal_acara}\n\n🏷️ Kategori Undangan: {kategori}\n\n━━━━━━━━━━━━━\n\n💌 Klik link di bawah ini untuk membuka undangan digital lengkap (acara, lokasi, peta, & konfirmasi kehadiran):\n\n🔗 {link_undangan}\n\n🤍 Kehadiran dan doa restu Anda adalah hadiah terindah bagi kami. Konfirmasi kehadiran dapat dilakukan langsung melalui link undangan di atas ya 🙏\n\nMohon maaf atas segala kekurangan 🙏\n\n Wassalamu\'alaikum Wr. Wb. 🌷\n\nSalam hangat & terima kasih, 🌸\n*{nama_kita}*';
 
+const CASUAL_WA_TEMPLATE = 'Hai {nama_tamu}! 👋✨\n\n*{nama_kita} mau nikah, nih!* 💍🤵👰\n\nAlhamdulillah, dengan ridho Allah kita insya Allah akan melangsungkan pernikahan. Yuk ikutan bahagia-bahagia bareng kita 🤍\n\n📅 {tanggal_acara}\n🏷️ {kategori}\n\nBuka undangan digitalnya di sini ya — lengkap sama rundown, lokasi, peta, & konfirmasi kehadiran 👇\n🔗 {link_undangan}\n\nTunggu kehadiran kamu biar makin ramai & syahdu ya 🙏 Makasih banyak sudah sudi mendoakan 🌸\n\nSalam hangat,\n*{nama_kita}*';
+
 const LEGACY_WA_TEMPLATES = [
   'Halo Bapak/Ibu {nama_tamu}\n\nDengan penuh kebahagiaan kami mengundang Anda untuk hadir di acara pernikahan kami:\n\nRia & Iqram\n\nBerikut link undangannya:\n{link_undangan}\n\nMerupakan suatu kehormatan bagi kami apabila Anda berkenan hadir.\n\nTerima kasih.',
   '🎉 *UNDANGAN PERNIKAHAN* 🎉\n\nHalo {nama_tamu}! 👋\n\nDengan memohon rahmat dan ridho Allah SWT, kami bermaksud menyapa Bapak/Ibu/Saudara/i untuk hadir di acara pernikahan:\n\n💍 {nama_kita}\n\n📅 Tanggal Acara: {tanggal_acara}\n📌 Kategori: {kategori}\n\n✨ Berikut link undangan digital kami:\n{link_undangan}\n\nMerupakan suatu kehormatan dan kebahagiaan bagi kami apabila Anda berkenan hadir dan memberikan doa restu. 🤍\n\nKonfirmasi kehadiran dapat dilakukan melalui link di atas. 🙏\n\nTerima kasih 🌸\nSalam hangat,\n{nama_kita}'
 ];
 
+const DEFAULT_WA_TEMPLATES = [
+  { id: 'formal', label: 'Formal — Keluarga, Kantor, Kehormatan, Sekolah, Saudara', content: DEFAULT_WA_TEMPLATE },
+  { id: 'santai', label: 'Santai — Teman, Tetangga, Umum', content: CASUAL_WA_TEMPLATE },
+];
+
+const DEFAULT_CATEGORY_TEMPLATE_MAP: Record<string, string> = {
+  'Keluarga': 'formal',
+  'Kehormatan': 'formal',
+  'Kerja': 'formal',
+  'Saudara': 'formal',
+  'Sekolah': 'formal',
+  'Teman': 'santai',
+  'Tetangga': 'santai',
+  'Umum': 'santai',
+  'Other': 'santai',
+};
+
 const defaultSettings = {
-  musicUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+  musicUrl: '/music/music.mp3',
   youtubeLiveUrl: '',
   theme: {
     primaryColor: '#8c6239',
@@ -162,7 +181,10 @@ const defaultSettings = {
   generalOptions: {
     enableCommentsApproval: false,
     enableMusicAutoplay: true,
-    whatsappGreetingTemplate: DEFAULT_WA_TEMPLATE
+    whatsappGreetingTemplate: DEFAULT_WA_TEMPLATE,
+    waTemplates: DEFAULT_WA_TEMPLATES,
+    defaultTemplateId: 'santai',
+    categoryTemplateMap: { ...DEFAULT_CATEGORY_TEMPLATE_MAP }
   }
 };
 
@@ -280,9 +302,41 @@ export async function bootstrapData() {
   const settingsRs = await db.execute({ sql: 'SELECT value FROM app_kv WHERE key = ?', args: ['settings'] });
   if (settingsRs.rows.length > 0) {
     const settings = JSON.parse(settingsRs.rows[0].value as string);
-    const currentTpl = settings?.generalOptions?.whatsappGreetingTemplate;
+    if (!settings.generalOptions) settings.generalOptions = {};
+    const go = settings.generalOptions;
+    let changed = false;
+
+    const currentTpl = go.whatsappGreetingTemplate;
     if (currentTpl && LEGACY_WA_TEMPLATES.includes(currentTpl)) {
-      const migrated = { ...settings, generalOptions: { ...settings.generalOptions, whatsappGreetingTemplate: DEFAULT_WA_TEMPLATE } };
+      go.whatsappGreetingTemplate = DEFAULT_WA_TEMPLATE;
+      changed = true;
+    }
+
+    if (!Array.isArray(go.waTemplates) || go.waTemplates.length === 0) {
+      const formalContent = (currentTpl && !LEGACY_WA_TEMPLATES.includes(currentTpl)) ? currentTpl : DEFAULT_WA_TEMPLATE;
+      go.waTemplates = [
+        { id: 'formal', label: 'Formal — Keluarga, Kantor, Kehormatan, Sekolah, Saudara', content: formalContent },
+        { id: 'santai', label: 'Santai — Teman, Tetangga, Umum', content: CASUAL_WA_TEMPLATE },
+      ];
+      changed = true;
+    }
+    if (go.defaultTemplateId === undefined || go.defaultTemplateId === null) {
+      go.defaultTemplateId = 'santai';
+      changed = true;
+    }
+    if (!go.categoryTemplateMap || typeof go.categoryTemplateMap !== 'object') {
+      go.categoryTemplateMap = { ...DEFAULT_CATEGORY_TEMPLATE_MAP };
+      changed = true;
+    }
+
+    // Migrate legacy external music URL to local file
+    if (settings.musicUrl && settings.musicUrl.startsWith('https://www.soundhelix.com')) {
+      settings.musicUrl = '/music/music.mp3';
+      changed = true;
+    }
+
+    if (changed) {
+      const migrated = { ...settings, generalOptions: go };
       await db.execute({ sql: 'INSERT OR REPLACE INTO app_kv (key, value) VALUES (?, ?)', args: ['settings', JSON.stringify(migrated)] });
     }
   }

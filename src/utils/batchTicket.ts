@@ -137,7 +137,7 @@ export async function renderPrintTicket(
 	ctx.stroke();
 
 	// Ticket label — prominent
-	const ticketLabel = 'T I K E T   C H E C K - I N';
+	const ticketLabel = 'B A R C O D E   C H E C K - I N';
 	const ticketSize = fitFont(ctx, ticketLabel, TICKET_W - 160, 68, sans);
 	ctx.font = `700 ${ticketSize}px ${sans}`;
 	ctx.fillStyle = batik;

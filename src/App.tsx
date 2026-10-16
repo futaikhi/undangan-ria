@@ -519,7 +519,7 @@ export default function App() {
       {settings && (
         <GamelanAudio
           url={settings.musicUrl}
-          autoplay={false}
+          autoplay={settings.generalOptions.enableMusicAutoplay}
         />
       )}
     </>

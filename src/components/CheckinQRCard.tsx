@@ -136,7 +136,7 @@ const renderTicketCard = async (qr: QrTicketData, content: Content): Promise<str
 	ctx.stroke();
 
 	// Ticket label — enlarged and bold so guests recognise this as a ticket to keep
-	const ticketLabel = 'T I K E T   C H E C K - I N';
+	const ticketLabel = 'B A R C O D E   C H E C K - I N';
 	const ticketSize = fitFont(ctx, ticketLabel, W - 120, 52, sans);
 	ctx.font = `700 ${ticketSize}px ${sans}`;
 	ctx.fillStyle = batik;
