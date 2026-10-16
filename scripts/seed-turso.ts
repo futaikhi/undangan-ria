@@ -147,11 +147,22 @@ async function main() {
   const guestCount = guestCountRs.rows[0].count as number;
 
   if (guestCount === 0) {
-    await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: ['RIAIQRAM', 'Keluarga Besar & Rekan Sejawat', 'Umum', '628123456789'] });
-    await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: ['VIP2026', 'Yth. Bapak & Ibu Pembimbing Jasa', 'VVIP', '628999999999'] });
+    await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: ['RIAIQRAM', 'Keluarga Besar & Rekan Sejawat', 'Keluarga', '628123456789'] });
+    await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: ['VIP2026', 'Yth. Bapak & Ibu Pembimbing Jasa', 'Kehormatan', '628999999999'] });
     console.log('Default guests seeded.');
   } else {
     console.log(`Guests already exist (${guestCount}), skipping seed.`);
+  }
+
+  const catCountRs = await db.execute({ sql: 'SELECT COUNT(*) as count FROM categories', args: [] });
+  const cats = ['Keluarga', 'Teman', 'Kehormatan', 'Kerja', 'Saudara', 'Sekolah', 'Tetangga', 'Umum', 'Other'];
+  for (let i = 0; i < cats.length; i++) {
+    await db.execute({ sql: 'INSERT OR IGNORE INTO categories (name, sort_order) VALUES (?, ?)', args: [cats[i], i + 1] });
+  }
+  if ((catCountRs.rows[0].count as number) === 0) {
+    console.log('Default categories seeded.');
+  } else {
+    console.log('Categories ensured (missing entries added).');
   }
 
   const contentRs = await db.execute({ sql: 'SELECT value FROM app_kv WHERE key = ?', args: ['content'] });

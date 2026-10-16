@@ -24,7 +24,7 @@ import {
 	Download,
 	QrCode
 } from 'lucide-react';
-import { Guest, Comment, Content, Settings as AppSettings, AuditLog, AdminStats, EVENT_KEYS } from '../types';
+import { Guest, Comment, Content, Settings as AppSettings, AuditLog, AdminStats, EVENT_KEYS, OTHER_CATEGORY } from '../types';
 import { generateBatchTicketsZip, downloadBlob, BatchProgress } from '../utils/batchTicket';
 
 interface AdminPanelProps {
@@ -39,6 +39,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [categories, setCategories] = useState<string[]>(['Keluarga', 'Teman', 'Kehormatan', 'Kerja', 'Saudara', 'Sekolah', 'Tetangga', 'Umum', 'Other']);
   
   // Forms & configuration states
   const [appContent, setAppContent] = useState<Content | null>(null);
@@ -64,12 +65,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const [batchResult, setBatchResult] = useState<{ count: number; errors: { code: string; error: string }[] } | null>(null);
 
   // New Guest state
-  const [newGuest, setNewGuest] = useState({ name: '', category: 'VVIP', whatsapp: '' });
+  const [newGuest, setNewGuest] = useState({ name: '', category: 'Keluarga', whatsapp: '' });
   const [isCreatingGuest, setIsCreatingGuest] = useState(false);
   
   // Bulk Guest Input state
   const [bulkInput, setBulkInput] = useState('');
-  const [bulkCategory, setBulkCategory] = useState('Umum');
+  const [bulkCategory, setBulkCategory] = useState('Keluarga');
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [isImportingBulk, setIsImportingBulk] = useState(false);
 
@@ -150,6 +151,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
       setAppSettings(configData.settings);
       syncFormFromContent(configData.content);
 
+      // Fetch category master list
+      const catResp = await fetch('/api/public/categories');
+      const catData = await catResp.json();
+      if (catData.success && catData.categories?.length) {
+        setCategories(catData.categories);
+      }
+
     } catch (err: any) {
       setErrorMsg(err.message || 'Gagal memuat dashboard');
     } finally {
@@ -201,9 +209,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   };
 
   const toggleSelectAll = () => {
+    const selectable = filteredGuests.filter(g => g.category !== OTHER_CATEGORY);
     setSelectedIds(prev => {
-      if (prev.size === filteredGuests.length) return new Set();
-      return new Set(filteredGuests.map(g => g.id));
+      if (prev.size === selectable.length && selectable.length > 0) return new Set();
+      return new Set(selectable.map(g => g.id));
     });
   };
 
@@ -248,7 +257,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
       });
       const data = await response.json();
       if (data.success) {
-        setNewGuest({ name: '', category: 'VVIP', whatsapp: '' });
+        setNewGuest({ name: '', category: 'Keluarga', whatsapp: '' });
         loadDashboardData(); // Reload statistics
       } else {
         alert(data.error || 'Gagal mendaftarkan tamu');
@@ -744,10 +753,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                         onChange={(e) => setNewGuest({ ...newGuest, category: e.target.value })}
                         className="w-full bg-stone-950 border border-stone-800 rounded-xl p-3 focus:border-gold-gentle focus:outline-none"
                       >
-                        <option value="VVIP">VVIP / Keluarga</option>
-                        <option value="VIP">VIP</option>
-                        <option value="Umum">Umum / Rekan Kerja</option>
-                        <option value="Teman Dekat">Teman Dekat</option>
+                        {categories.map((cat) => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
                       </select>
                     </div>
 
@@ -806,10 +814,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                       className="bg-stone-950 border border-stone-800 rounded-lg p-2 focus:outline-none"
                     >
                       <option value="Semua">Semua Kategori</option>
-                      <option value="VVIP">VVIP/Keluarga</option>
-                      <option value="VIP">VIP</option>
-                      <option value="Umum">Umum</option>
-                      <option value="Teman Dekat">Teman Dekat</option>
+                      {categories.map((cat) => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
                     </select>
 
                     <select
@@ -891,7 +898,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                           <th className="py-3 px-2 w-8">
                             <input
                               type="checkbox"
-                              checked={selectedIds.size > 0 && selectedIds.size === filteredGuests.length}
+                              checked={selectedIds.size > 0 && selectedIds.size === filteredGuests.filter(g => g.category !== OTHER_CATEGORY).length}
                               onChange={toggleSelectAll}
                               className="accent-amber-600 cursor-pointer w-3.5 h-3.5"
                               title="Pilih semua tamu"
@@ -927,7 +934,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                                     type="checkbox"
                                     checked={selectedIds.has(g.id)}
                                     onChange={() => toggleSelect(g.id)}
-                                    className="accent-amber-600 cursor-pointer w-3.5 h-3.5"
+                                    disabled={g.category === OTHER_CATEGORY}
+                                    className="accent-amber-600 cursor-pointer w-3.5 h-3.5 disabled:opacity-30 disabled:cursor-not-allowed"
+                                    title={g.category === OTHER_CATEGORY ? 'Kategori Other tidak generate tiket' : 'Pilih untuk generate tiket'}
                                   />
                                 </td>
                               )}
@@ -940,12 +949,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                                       onChange={(e) => setEditGuestForm({ ...editGuestForm, name: e.target.value })}
                                       className="bg-stone-950 border border-stone-800 p-1.5 rounded text-xs w-full"
                                     />
-                                    <input
-                                      type="text"
+                                    <select
                                       value={editGuestForm.category || ''}
                                       onChange={(e) => setEditGuestForm({ ...editGuestForm, category: e.target.value })}
                                       className="bg-stone-950 border border-stone-800 p-1.5 rounded text-xs w-full"
-                                    />
+                                    >
+                                      {categories.map((cat) => (
+                                        <option key={cat} value={cat}>{cat}</option>
+                                      ))}
+                                    </select>
                                   </div>
                                 ) : (
                                   <div>
@@ -1206,16 +1218,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                    <form onSubmit={handleBulkImport} className="space-y-4">
                      <div>
                        <label className="block text-xs uppercase tracking-widest text-white mb-1">Kategori Default (Jika baris tidak menyebutkan)</label>
-                       <select
-                         value={bulkCategory}
-                         onChange={(e) => setFilterCategory(e.target.value)}
-                         className="w-full bg-stone-950 border border-stone-800 rounded-xl p-3 focus:border-gold-gentle focus:outline-none text-xs"
-                       >
-                         <option value="Umum">Umum</option>
-                         <option value="VVIP">VVIP / Keluarga</option>
-                         <option value="VIP">VIP</option>
-                         <option value="Teman Dekat">Teman Dekat</option>
-                       </select>
+                        <select
+                          value={bulkCategory}
+                          onChange={(e) => setBulkCategory(e.target.value)}
+                          className="w-full bg-stone-950 border border-stone-800 rounded-xl p-3 focus:border-gold-gentle focus:outline-none text-xs"
+                        >
+                          {categories.map((cat) => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
                      </div>
 
                      <div className="border-t border-stone-800 pt-4">

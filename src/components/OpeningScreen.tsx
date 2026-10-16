@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Mail, Calendar } from 'lucide-react';
 import { JavaneseGunungan, CornerOrnament } from './BatikOrnament';
+import { OTHER_CATEGORY } from '../types';
 
 interface OpeningScreenProps {
   guestName: string | null;
@@ -113,7 +114,7 @@ export const OpeningScreen: React.FC<OpeningScreenProps> = ({ guestName, guestCa
             <h2 className="font-serif text-lg md:text-xl font-semibold text-black tracking-wide truncate ">
               {guestName}
             </h2>
-            {guestCategory && (
+            {guestCategory && guestCategory !== OTHER_CATEGORY && (
               <span className="inline-block mt-2 px-3 py-0.5 rounded-full bg-batik-brown/30 border border-gold-gentle/30 text-[9px] font-mono uppercase text-black tracking-wider">
                 {guestCategory}
               </span>

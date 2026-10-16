@@ -1,3 +1,5 @@
+export const OTHER_CATEGORY = 'Other';
+
 export interface Guest {
   id: number;
   code: string;

@@ -4,6 +4,8 @@ import fs from 'fs';
 
 const USE_TURSO = !!process.env.TURSO_DATABASE_URL;
 
+export const OTHER_CATEGORY = 'Other';
+
 export const db: Client = USE_TURSO
   ? createClient({
       url: process.env.TURSO_DATABASE_URL || "",
@@ -157,6 +159,18 @@ const defaultSettings = {
   }
 };
 
+const defaultCategories: Array<{ name: string; sort_order: number }> = [
+  { name: 'Keluarga', sort_order: 1 },
+  { name: 'Teman', sort_order: 2 },
+  { name: 'Kehormatan', sort_order: 3 },
+  { name: 'Kerja', sort_order: 4 },
+  { name: 'Saudara', sort_order: 5 },
+  { name: 'Sekolah', sort_order: 6 },
+  { name: 'Tetangga', sort_order: 7 },
+  { name: 'Umum', sort_order: 8 },
+  { name: 'Other', sort_order: 9 },
+];
+
 async function getKV(key: string, defaultValue: any) {
   const rs = await db.execute({ sql: 'SELECT value FROM app_kv WHERE key = ?', args: [key] });
   if (rs.rows.length > 0) {
@@ -221,16 +235,26 @@ export async function bootstrapData() {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      sort_order INTEGER DEFAULT 0
+    );
   `);
 
   await ensureGuestColumns();
+
+  for (const cat of defaultCategories) {
+    await db.execute({ sql: 'INSERT OR IGNORE INTO categories (name, sort_order) VALUES (?, ?)', args: [cat.name, cat.sort_order] });
+  }
 
   const guestRs = await db.execute({ sql: 'SELECT COUNT(*) as count FROM guests', args: [] });
   const guestCount = guestRs.rows[0].count as number;
 
   if (guestCount === 0) {
-    await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: ['RIAIQRAM', 'Keluarga Besar & Rekan Sejawat', 'Umum', '628123456789'] });
-    await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: ['VIP2026', 'Yth. Bapak & Ibu Pembimbing Jasa', 'VVIP', '628999999999'] });
+    await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: ['RIAIQRAM', 'Keluarga Besar & Rekan Sejawat', 'Keluarga', '628123456789'] });
+    await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: ['VIP2026', 'Yth. Bapak & Ibu Pembimbing Jasa', 'Kehormatan', '628999999999'] });
   }
 
   await getKV('content', defaultContent);
@@ -261,4 +285,9 @@ export async function readSettings() {
 
 export async function writeSettings(data: any) {
   await setKV('settings', data);
+}
+
+export async function readCategories(): Promise<string[]> {
+  const rs = await db.execute({ sql: 'SELECT name FROM categories ORDER BY sort_order ASC, id ASC', args: [] });
+  return rs.rows.map((r: any) => String(r.name));
 }

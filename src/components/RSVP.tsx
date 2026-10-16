@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { BatikDivider } from './BatikOrnament';
 import { CheckinQRCard } from './CheckinQRCard';
-import { Content, Guest, Settings } from '../types';
+import { Content, Guest, Settings, OTHER_CATEGORY } from '../types';
 
 interface RSVPProps {
 	guest: Guest | null;
@@ -81,10 +81,12 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 				setSubmitMsg({
 					type: 'success',
 					text: rsvpStatus === 'hadir'
-						? 'Terima kasih! Konfirmasi kehadiran Anda telah tersimpan. Tiket QR check-in Anda terbit.'
+						? guest?.category !== OTHER_CATEGORY
+							? 'Terima kasih! Konfirmasi kehadiran Anda telah tersimpan. Tiket QR check-in Anda terbit.'
+							: 'Terima kasih! Konfirmasi kehadiran Anda telah tersimpan.'
 						: 'Terima kasih! Konfirmasi kehadiran Anda telah tersimpan.'
 				});
-				if (rsvpStatus === 'hadir') {
+				if (rsvpStatus === 'hadir' && guest?.category !== OTHER_CATEGORY) {
 					setTicketOpen(true);
 				}
 				setRsvpComment(''); // Clear input message
@@ -111,7 +113,7 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 				<BatikDivider />
 
 				{/* QR ticket requirement notice for guests who don't have a ticket yet */}
-				{guest?.status !== 'hadir' && (
+				{guest?.status !== 'hadir' && guest?.category !== OTHER_CATEGORY && (
 					<div
 						className="bg-batik-brown/30 border border-gold-gentle/40 text-stone-200 rounded-2xl p-4 mb-6 max-w-lg mx-auto text-left flex items-start gap-3"
 						id="rsvp-ticket-notice"
@@ -306,8 +308,8 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 					<span>{isSubmitting ? 'Mengirim...' : 'Konfirmasi'}</span>
 				</button>
 
-				{/* Check-in ticket entry: opens the ticket modal for confirmed guests */}
-				{guest?.status === 'hadir' && settings && (
+			{/* Check-in ticket entry: opens the ticket modal for confirmed guests */}
+			{guest?.status === 'hadir' && guest?.category !== OTHER_CATEGORY && settings && (
 					<button
 						type="button"
 						onClick={() => setTicketOpen(true)}
@@ -321,7 +323,7 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 			</form>
 
 			{/* Check-in ticket modal */}
-			{guest?.status === 'hadir' && settings && (
+			{guest?.status === 'hadir' && guest?.category !== OTHER_CATEGORY && settings && (
 				<CheckinQRCard
 					guest={guest}
 					content={content}

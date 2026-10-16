@@ -13,7 +13,9 @@ import {
   writeContent,
   readSettings,
   writeSettings,
-  bootstrapData
+  bootstrapData,
+  readCategories,
+  OTHER_CATEGORY
 } from '../db.js';
 
 try {
@@ -121,7 +123,7 @@ function buildCheckinPayload(guest: any): string {
   const data = JSON.stringify({
     code: guest.code,
     name: guest.name,
-    category: guest.category || 'Umum',
+    category: guest.category || 'Keluarga',
     guestCount: parseInt(guest.guest_count) || 1,
     event: RSVP_EVENT_KEYS.includes(guest.event_key) ? guest.event_key : null,
     arrivalTime: guest.arrival_time || null
@@ -284,6 +286,15 @@ app.get('/api/public/content', async (req, res) => {
   }
 });
 
+app.get('/api/public/categories', async (req, res) => {
+  try {
+    const categories = await readCategories();
+    res.json({ success: true, categories });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Gagal memuat kategori: ' + err.message });
+  }
+});
+
 app.get('/api/public/invitation/:code', rateLimiter(100, 60000), async (req, res) => {
   const { code } = req.params;
   try {
@@ -403,6 +414,9 @@ app.get('/api/public/invitation/:code/qr', rateLimiter(30, 60000), async (req, r
     if (guest.status !== 'hadir') {
       return res.status(400).json({ error: 'QR check-in hanya diterbitkan untuk tamu yang mengonfirmasi HADIR' });
     }
+    if (guest.category === OTHER_CATEGORY) {
+      return res.status(400).json({ error: 'Kategori tamu ini tidak memerlukan tiket check-in' });
+    }
 
     const content = await readContent();
     const settings = await readSettings();
@@ -455,6 +469,9 @@ app.post('/api/public/invitation/:code/qr/email', rateLimiter(3, 60000), async (
     if (guest.status_active === 0) return res.status(403).json({ error: 'Undangan ini dinonaktifkan sementara oleh admin' });
     if (guest.status !== 'hadir') {
       return res.status(400).json({ error: 'QR check-in hanya diterbitkan untuk tamu yang mengonfirmasi HADIR' });
+    }
+    if (guest.category === OTHER_CATEGORY) {
+      return res.status(400).json({ error: 'Kategori tamu ini tidak memerlukan tiket check-in' });
     }
 
     const content = await readContent();
@@ -658,13 +675,13 @@ app.post('/api/admin-undangan-ria-iqram/guests', authenticateAdmin, async (req, 
     }
 
     const cleanedWA = (whatsapp || '').trim().replace(/[^0-9]/g, '');
-    const infoRs = await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: [code, name.trim(), (category || 'Umum').trim(), cleanedWA] });
+    const infoRs = await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: [code, name.trim(), (category || 'Keluarga').trim(), cleanedWA] });
     const id = Number(infoRs.lastInsertRowid);
 
     addAuditLog('GUEST_CREATED', `Tamu '${name}' berhasil didaftarkan (Code: ${code})`);
     res.json({
       success: true,
-      guest: { id, code, name: name.trim(), category: category || 'Umum', whatsapp: cleanedWA, status: 'belum_respon', guest_count: 0, opened_count: 0 }
+      guest: { id, code, name: name.trim(), category: category || 'Keluarga', whatsapp: cleanedWA, status: 'belum_respon', guest_count: 0, opened_count: 0 }
     });
   } catch (err: any) {
     res.status(500).json({ error: 'Gagal membuat tamu: ' + err.message });
@@ -689,13 +706,13 @@ app.post('/api/admin-undangan-ria-iqram/guests/bulk', authenticateAdmin, async (
       }
 
       const cleanedWA = (item.whatsapp || '').toString().trim().replace(/[^0-9]/g, '');
-      const infoRs = await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: [code, item.name.trim(), (item.category || 'Umum').trim(), cleanedWA] });
+      const infoRs = await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: [code, item.name.trim(), (item.category || 'Keluarga').trim(), cleanedWA] });
 
       insertedGuests.push({
         id: Number(infoRs.lastInsertRowid),
         code,
         name: item.name.trim(),
-        category: item.category || 'Umum',
+        category: item.category || 'Keluarga',
         whatsapp: cleanedWA,
         status: 'belum_respon',
         guest_count: 0,
@@ -734,6 +751,7 @@ app.post('/api/admin-undangan-ria-iqram/guests/batch-qr', authenticateAdmin, asy
       const guest = guestRs.rows[0] as any;
       if (!guest) { tickets.push({ code, error: 'Tidak ditemukan' }); continue; }
       if (guest.status_active === 0) { tickets.push({ code, error: 'Undangan dinonaktifkan' }); continue; }
+      if (guest.category === OTHER_CATEGORY) { tickets.push({ code, error: 'Kategori tidak perlu tiket' }); continue; }
 
       const checkinData = buildCheckinPayload(guest);
       const checkinUrl = buildCheckinUrl(checkinData, settings);
@@ -779,7 +797,7 @@ app.put('/api/admin-undangan-ria-iqram/guests/:id', authenticateAdmin, async (re
 
     const result = await db.execute({
       sql: `UPDATE guests SET name = ?, category = ?, whatsapp = ?, status = ?, guest_count = ?, status_active = ? WHERE id = ?`,
-      args: [name.trim(), category || 'Umum', cleanedWA, status || 'belum_respon', numGuest, activeVal, id]
+      args: [name.trim(), category || 'Keluarga', cleanedWA, status || 'belum_respon', numGuest, activeVal, id]
     });
 
     if (result.rowsAffected === 0) return res.status(404).json({ error: 'Tamu tidak ditemukan' });
