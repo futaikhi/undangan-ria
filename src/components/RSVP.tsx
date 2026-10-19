@@ -8,11 +8,11 @@ import {
 	MapPin,
 	Navigation,
 	QrCode,
-	Send
+	Send, Lock
 } from 'lucide-react';
 import { BatikDivider } from './BatikOrnament';
 import { CheckinQRCard } from './CheckinQRCard';
-import { Content, Guest, Settings, OTHER_CATEGORY } from '../types';
+import { Content, Guest, Settings } from '../types';
 
 interface RSVPProps {
 	guest: Guest | null;
@@ -43,6 +43,10 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submitMsg, setSubmitMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 	const [ticketOpen, setTicketOpen] = useState(false);
+
+	// RSVP gate reminder modal state
+	const [gateOpen, setGateOpen] = useState(false);
+
 
 	// Nama tamu mengikuti data undangan dan tidak boleh diubah oleh pengunjung
 	const isNameLocked = !!guest?.name;
@@ -81,12 +85,10 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 				setSubmitMsg({
 					type: 'success',
 					text: rsvpStatus === 'hadir'
-						? guest?.category !== OTHER_CATEGORY
-							? 'Terima kasih! Konfirmasi kehadiran Anda telah tersimpan. Tiket QR check-in Anda terbit.'
-							: 'Terima kasih! Konfirmasi kehadiran Anda telah tersimpan.'
+						? 'Terima kasih! Konfirmasi kehadiran Anda telah tersimpan. Kode check-in Anda terbit.'
 						: 'Terima kasih! Konfirmasi kehadiran Anda telah tersimpan.'
 				});
-				if (rsvpStatus === 'hadir' && guest?.category !== OTHER_CATEGORY) {
+				if (rsvpStatus === 'hadir') {
 					setTicketOpen(true);
 				}
 				setRsvpComment(''); // Clear input message
@@ -98,6 +100,33 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 		} finally {
 			setIsSubmitting(false);
 		}
+	};
+
+	// Gate appears only from the guest's second visit onward (persisted via localStorage),
+	// so first-time visitors can read the event schedule before being asked to confirm
+	useEffect(() => {
+		if (!guest || guest.status !== 'belum_respon') {
+			setGateOpen(false);
+			return;
+		}
+		const seenKey = `rsvp_gate_seen_${guest.name}`;
+		let alreadySeen = false;
+		try {
+			alreadySeen = !!localStorage.getItem(seenKey);
+			if (!alreadySeen) localStorage.setItem(seenKey, '1');
+		} catch {
+			alreadySeen = true; // storage unavailable: fall back to showing the gate
+		}
+		if (!alreadySeen) return;
+		const t = setTimeout(() => setGateOpen(true), 1800);
+		return () => clearTimeout(t);
+	}, [guest?.status]);
+
+
+	// Close the gate and bring the guest to the full form
+	const closeGateToForm = () => {
+		setGateOpen(false);
+		document.getElementById('section-rsvp')?.scrollIntoView({ behavior: 'smooth' });
 	};
 
 	const respondedStatus = guest?.status === 'hadir' ? 'HADIR' : 'TIDAK HADIR';
@@ -113,7 +142,7 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 				<BatikDivider />
 
 				{/* QR ticket requirement notice for guests who don't have a ticket yet */}
-				{guest?.status !== 'hadir' && guest?.category !== OTHER_CATEGORY && (
+				{guest?.status !== 'hadir' && (
 					<div
 						className="bg-batik-brown/30 border border-gold-gentle/40 text-stone-200 rounded-2xl p-4 mb-6 max-w-lg mx-auto text-left flex items-start gap-3"
 						id="rsvp-ticket-notice"
@@ -124,8 +153,9 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 								Konfirmasi Kehadiran Wajib Diisi
 							</p>
 							<p className="text-[11px] text-stone-300 mt-1 leading-relaxed">
-								Silakan isi konfirmasi kehadiran. Tiket QR check-in terbit otomatis setelah
-								konfirmasi tersimpan, dan tiket tersebut wajib ditunjukkan saat memasuki area acara.
+								Untuk kelancaran acara, mohon konfirmasi kehadiran Anda melalui formulir di bawah.
+								Kode check-in akan terbit otomatis setelah konfirmasi tersimpan, dan cukup
+								ditunjukkan sekali saat tiba di pintu masuk.
 							</p>
 						</div>
 					</div>
@@ -309,7 +339,7 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 				</button>
 
 			{/* Check-in ticket entry: opens the ticket modal for confirmed guests */}
-			{guest?.status === 'hadir' && guest?.category !== OTHER_CATEGORY && settings && (
+			{guest?.status === 'hadir' && settings && (
 					<button
 						type="button"
 						onClick={() => setTicketOpen(true)}
@@ -317,13 +347,30 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 						id="checkin-qr-open-btn"
 					>
 						<QrCode size={14} />
-						<span>Lihat / Simpan Tiket Check-in</span>
+						<span>Lihat / Simpan Kode Check-in</span>
 					</button>
 				)}
+						{/* Check-in ticket locked preview: reward teaser for guests who haven't confirmed */}
+			{guest && guest.status === 'belum_respon' && (
+				<div className="mt-4" id="checkin-qr-locked">
+					<button
+						type="button"
+						disabled
+						className="w-full py-3.5 rounded-xl bg-stone-850 border border-stone-800 text-stone-500 text-xs uppercase font-semibold tracking-widest shadow-inner flex items-center justify-center gap-2 px-4 cursor-not-allowed opacity-75 select-none"
+					>
+						<Lock size={14} />
+						<span>Kode Check-in</span>
+					</button>
+					<p className="text-[10px] text-stone-500 text-center mt-2 leading-relaxed">
+						Isi konfirmasi kehadiran untuk membuka
+					</p>
+				</div>
+			)}
+
 			</form>
 
 			{/* Check-in ticket modal */}
-			{guest?.status === 'hadir' && guest?.category !== OTHER_CATEGORY && settings && (
+			{guest?.status === 'hadir' && settings && (
 				<CheckinQRCard
 					guest={guest}
 					content={content}
@@ -333,6 +380,53 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 				/>
 			)}
 		</div>
+				{/* RSVP gate modal: single CTA into the RSVP form on the guest's second visit */}
+		<AnimatePresence>
+			{gateOpen && (
+				<motion.div
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					exit={{ opacity: 0 }}
+					className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+					id="rsvp-gate-overlay"
+				>
+					<motion.div
+						initial={{ scale: 0.92, y: 12 }}
+						animate={{ scale: 1, y: 0 }}
+						exit={{ scale: 0.92, y: 12 }}
+						transition={{ duration: 0.25 }}
+						className="relative w-full max-w-sm bg-stone-900 border border-gold-gentle/40 rounded-3xl p-6 shadow-2xl text-center"
+					>
+						<button
+							type="button"
+							onClick={() => setGateOpen(false)}
+							aria-label="Tutup pengingat konfirmasi"
+							className="absolute top-3 right-4 text-stone-500 hover:text-stone-300 text-lg leading-none cursor-pointer"
+							id="rsvp-gate-close"
+						>
+							×
+						</button>
+						<QrCode size={28} className="mx-auto text-gold-shine mb-3" />
+						<h3 className="font-display text-lg font-semibold text-gold-gradient tracking-wide">
+							Konfirmasi Kehadiran Anda
+						</h3>
+						<p className="text-[11px] text-stone-300 mt-2 leading-relaxed">
+							Check-in adalah syarat masuk area acara. Isi konfirmasi kehadiran Anda
+							sekarang, kode check-in langsung terbit.
+						</p>
+						<button
+							type="button"
+							onClick={closeGateToForm}
+							className="mt-5 w-full py-3.5 rounded-xl bg-gradient-to-r from-batik-brown to-amber-800 text-white border border-gold-gentle text-xs uppercase font-semibold tracking-widest shadow-lg transition-all hover:from-amber-800 hover:to-batik-brown cursor-pointer"
+							id="rsvp-gate-cta"
+						>
+							Konfirmasi Kehadiran
+						</button>
+					</motion.div>
+				</motion.div>
+			)}
+		</AnimatePresence>
+
 		</section>
 	);
 };
