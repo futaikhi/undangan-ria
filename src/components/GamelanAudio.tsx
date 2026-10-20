@@ -4,9 +4,11 @@ import { Volume2, VolumeX } from 'lucide-react';
 interface GamelanAudioProps {
   url: string;
   autoplay: boolean;
+  /** Tombol ikon hanya muncul setelah undangan dibuka */
+  showToggle?: boolean;
 }
 
-export const GamelanAudio: React.FC<GamelanAudioProps> = ({ url, autoplay }) => {
+export const GamelanAudio: React.FC<GamelanAudioProps> = ({ url, autoplay, showToggle = true }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
@@ -80,31 +82,33 @@ export const GamelanAudio: React.FC<GamelanAudioProps> = ({ url, autoplay }) => 
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] transition-all duration-300 gamelan-audio-fab">
-      <button
-        onClick={togglePlayback}
-        className={`relative flex items-center justify-center w-12 h-12 rounded-full cursor-pointer shadow-lg transition-all duration-300 border ${
-          isPlaying
-            ? 'bg-transparent text-gold-shine border-gold-shine animate-pulse'
-            : 'bg-transparent border-gold-shine/60 text-gold-shine hover:text-white hover:border-gold-shine'
-        }`}
-        id="btn-volume-player"
-        title={isPlaying ? "Mute Gamelan" : "Play Gamelan"}
-      >
-        {/* Animated wave pulses representing active acoustics */}
-        {isPlaying && (
-          <>
-            <span className="absolute inline-flex h-full w-full rounded-full border-2 border-gold-shine opacity-75 animate-ping -z-10"></span>
-            <div className="absolute inset-0 flex items-center justify-around px-3 py-4 opacity-30">
-              <span className="w-[2px] h-3 bg-gold-shine rounded h-animate-1"></span>
-              <span className="w-[2px] h-2 bg-gold-shine rounded h-animate-2"></span>
-              <span className="w-[2px] h-4 bg-gold-shine rounded h-animate-3"></span>
-            </div>
-          </>
-        )}
+    <div className={`fixed bottom-6 right-6 z-[9999] transition-all duration-300 gamelan-audio-fab ${showToggle ? '' : 'pointer-events-none opacity-0'}`}>
+      {showToggle && (
+        <button
+          onClick={togglePlayback}
+          className={`relative flex items-center justify-center w-12 h-12 rounded-full cursor-pointer shadow-lg transition-all duration-300 border ${
+            isPlaying
+              ? 'bg-transparent text-gold-shine border-gold-shine animate-pulse'
+              : 'bg-transparent border-gold-shine/60 text-gold-shine hover:text-white hover:border-gold-shine'
+          }`}
+          id="btn-volume-player"
+          title={isPlaying ? "Mute Gamelan" : "Play Gamelan"}
+        >
+          {/* Animated wave pulses representing active acoustics */}
+          {isPlaying && (
+            <>
+              <span className="absolute inline-flex h-full w-full rounded-full border-2 border-gold-shine opacity-75 animate-ping -z-10"></span>
+              <div className="absolute inset-0 flex items-center justify-around px-3 py-4 opacity-30">
+                <span className="w-[2px] h-3 bg-gold-shine rounded h-animate-1"></span>
+                <span className="w-[2px] h-2 bg-gold-shine rounded h-animate-2"></span>
+                <span className="w-[2px] h-4 bg-gold-shine rounded h-animate-3"></span>
+              </div>
+            </>
+          )}
 
-        {isPlaying ? <Volume2 size={20} className="relative z-10" /> : <VolumeX size={18} className="relative z-10" />}
-      </button>
+          {isPlaying ? <Volume2 size={20} className="relative z-10" /> : <VolumeX size={18} className="relative z-10" />}
+        </button>
+      )}
 
       {/* Acoustic wave animation custom headers */}
       <style>{`

@@ -520,6 +520,7 @@ export default function App() {
         <GamelanAudio
           url={settings.musicUrl}
           autoplay={settings.generalOptions.enableMusicAutoplay}
+          showToggle={isOpen}
         />
       )}
     </>
