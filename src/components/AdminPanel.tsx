@@ -23,9 +23,11 @@ import {
 	Smartphone,
 	Download,
 	QrCode,
+	Send,
+	Printer,
 	ChevronDown
 } from 'lucide-react';
-import { Guest, Comment, Content, Settings as AppSettings, AuditLog, AdminStats, EVENT_KEYS, OTHER_CATEGORY, WaTemplate, GeneralOptions } from '../types';
+import { Guest, Comment, Content, Settings as AppSettings, AuditLog, AdminStats, EVENT_KEYS, OTHER_CATEGORY, WaTemplate, GeneralOptions, InviteType } from '../types';
 import { generateBatchTicketsZip, downloadBlob, BatchProgress } from '../utils/batchTicket';
 
 interface AdminPanelProps {
@@ -145,6 +147,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('Semua');
   const [filterStatus, setFilterStatus] = useState('Semua');
+  const [filterInviteType, setFilterInviteType] = useState('Semua');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
@@ -160,17 +163,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const [batchResult, setBatchResult] = useState<{ count: number; errors: { code: string; error: string }[] } | null>(null);
 
   // New Guest state
-  const [newGuest, setNewGuest] = useState({ name: '', category: 'Keluarga', whatsapp: '' });
+  const [newGuest, setNewGuest] = useState({ name: '', category: 'Keluarga', whatsapp: '', invite_type: 'digital' as InviteType });
   const [isCreatingGuest, setIsCreatingGuest] = useState(false);
   
   // Bulk Guest Input state
   const [bulkInput, setBulkInput] = useState('');
   const [bulkCategory, setBulkCategory] = useState('Keluarga');
+  const [bulkInviteType, setBulkInviteType] = useState<InviteType>('digital');
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [isImportingBulk, setIsImportingBulk] = useState(false);
 
   // Excel import state
-  const [excelPreview, setExcelPreview] = useState<{ name: string; category: string; whatsapp: string }[]>([]);
+  const [excelPreview, setExcelPreview] = useState<{ name: string; category: string; whatsapp: string; invite_type: InviteType }[]>([]);
   const [excelFileName, setExcelFileName] = useState('');
   const [isImportingExcel, setIsImportingExcel] = useState(false);
 
@@ -437,7 +441,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
       });
       const data = await response.json();
       if (data.success) {
-        setNewGuest({ name: '', category: 'Keluarga', whatsapp: '' });
+        setNewGuest({ name: '', category: 'Keluarga', whatsapp: '', invite_type: 'digital' });
         loadDashboardData(); // Reload statistics
       } else {
         showToast(data.error || 'Gagal mendaftarkan tamu', 'error');
@@ -463,7 +467,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         const category = parts[1] ? parts[1].trim() : bulkCategory;
         const rawWa = parts[2] ? parts[2].trim() : '';
         const whatsapp = normalizePhone(rawWa);
-        return { name, category, whatsapp };
+        const invite_type = parts[3] ? parseInviteType(parts[3]) : bulkInviteType;
+        return { name, category, whatsapp, invite_type };
       }).filter(g => g.name.length > 0);
 
       if (parsedGuests.length === 0) {
@@ -502,6 +507,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     return '62' + digits;
   };
 
+  // Ubah nilai bebas menjadi jenis undangan yang valid: digital atau cetak
+  const parseInviteType = (raw: string): InviteType => {
+    const value = String(raw || '').trim().toLowerCase();
+    if (!value) return 'digital';
+    if (['cetak', 'print', 'printed', 'offline', 'fisik', 'kertas'].some((k) => value.includes(k))) return 'cetak';
+    return 'digital';
+  };
+
+  // Undangan cetak hanya dikirim manual oleh admin, jadi tidak ikut blast otomatis
+  const isBlastEligible = (guest: Guest): boolean => (guest.invite_type || 'digital') === 'digital' && !!guest.whatsapp;
+
+  // Blast pesan undangan digital: hanya tamu tipe digital, tamu cetak dilewati
+  const handleBlastMessage = async () => {
+    const eligible = guests.filter(isBlastEligible);
+    const skipped = guests.length - eligible.length;
+    if (eligible.length === 0) {
+      showToast('Tidak ada tamu digital yang bisa dikirim', 'error');
+      return;
+    }
+
+    const bundle = eligible.map((g) => `=== ${g.name} (${g.whatsapp}) ===\n${buildWaMessage(g)}`).join('\n\n');
+    try {
+      await navigator.clipboard.writeText(bundle);
+      showToast(`${eligible.length} pesan digital disalin${skipped > 0 ? `, ${skipped} tamuUNDangan cetak dilewati` : ''}`);
+    } catch {
+      showToast('Gagal menyalin pesan, periksa izin clipboard', 'error');
+    }
+  };
+
   const handleExcelFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -520,7 +554,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
           const category = String(row.category || row.kategori || row['Kategori'] || row['KATEGORI'] || '').trim();
           const rawWa = String(row.whatsapp || row.wa || row['WhatsApp'] || row['WA'] || row['No HP'] || row['no_hp'] || '').trim();
           const whatsapp = normalizePhone(rawWa);
-          return { name, category, whatsapp };
+          const rawType = String(
+            row.invite_type || row.jenis_undangan || row.jenis || row.undangan ||
+            row['Jenis Undangan'] || row['Jenis'] || row['Undangan'] || row['Tipe'] || ''
+          ).trim();
+          const invite_type = rawType ? parseInviteType(rawType) : bulkInviteType;
+          return { name, category, whatsapp, invite_type };
         }).filter((g: any) => g.name.length > 0);
 
         setExcelPreview(parsed);
@@ -721,12 +760,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   // Simple CSV Client-Side Downloader
   const downloadGuestsCSV = () => {
     let csvContent = 'data:text/csv;charset=utf-8,';
-    csvContent += 'Nama Tamu,Kode Unik,Kategori,Nomor WhatsApp,Status RSVP,Tamu Hadir,Jumlah Buka,Tautan Undangan\n';
+    csvContent += 'Nama Tamu,Kode Unik,Kategori,Nomor WhatsApp,Jenis Undangan,Status RSVP,Tamu Hadir,Jumlah Buka,Tautan Undangan\n';
 
     guests.forEach(g => {
       const origin = window.location.origin;
       const inviteUrl = `${origin}/i/${g.code}`;
-      const line = `"${g.name}","${g.code}","${g.category}","${g.whatsapp}","${g.status}",${g.guest_count},${g.opened_count},"${inviteUrl}"`;
+      const line = `"${g.name}","${g.code}","${g.category}","${g.whatsapp}","${g.invite_type || 'digital'}","${g.status}",${g.guest_count},${g.opened_count},"${inviteUrl}"`;
       csvContent += line + '\n';
     });
 
@@ -746,7 +785,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                           g.whatsapp.includes(searchQuery);
     const matchesCategory = filterCategory === 'Semua' || g.category === filterCategory;
     const matchesStatus = filterStatus === 'Semua' || g.status === filterStatus;
-    return matchesSearch && matchesCategory && matchesStatus;
+    const matchesInviteType = filterInviteType === 'Semua' || (g.invite_type || 'digital') === filterInviteType;
+    return matchesSearch && matchesCategory && matchesStatus && matchesInviteType;
   });
 
   return (
@@ -953,6 +993,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                     </div>
                   </div>
 
+                  <div>
+                    <label className="block text-white mb-1">Jenis Undangan</label>
+                    <div className="relative">
+                      <select
+                        value={newGuest.invite_type}
+                        onChange={(e) => setNewGuest({ ...newGuest, invite_type: e.target.value as InviteType })}
+                        className="w-full appearance-none bg-stone-950 border border-stone-800 rounded-xl pl-3 pr-9 py-3 focus:border-gold-gentle focus:outline-none"
+                      >
+                        <option value="digital">Digital (tautan)</option>
+                        <option value="cetak">Cetak (undangan fisik)</option>
+                      </select>
+                      <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
+                    </div>
+                    <p className="text-[10px] text-stone-500 mt-1 leading-relaxed">
+                      {newGuest.invite_type === 'cetak'
+                        ? 'Tamu cetak otomatis ditandai hadir dan tidak ikut blast pesan digital.'
+                        : 'Tamu digital menerima pesan undangan dan pengingat RSVP otomatis.'}
+                    </p>
+                  </div>
+
                   <button
                     type="submit"
                     disabled={isCreatingGuest}
@@ -1017,6 +1077,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                       </select>
                       <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
                     </div>
+
+                    <div className="relative">
+                      <select
+                        value={filterInviteType}
+                        onChange={(e) => setFilterInviteType(e.target.value)}
+                        className="appearance-none bg-stone-950 border border-stone-800 rounded-lg pl-2 pr-8 py-2 focus:outline-none"
+                      >
+                        <option value="Semua">Semua Undangan</option>
+                        <option value="digital">Digital</option>
+                        <option value="cetak">Cetak</option>
+                      </select>
+                      <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
+                    </div>
+
+                    <button
+                      onClick={handleBlastMessage}
+                      className="px-3 py-2 bg-stone-950 border border-stone-850 rounded-lg text-white hover:text-white-shine text-[11px] flex items-center gap-1 font-mono cursor-pointer"
+                      title="Salin pesan undangan digital untuk semua tamu digital (tamu cetak dilewati)"
+                    >
+                      <Send size={12} />
+                      <span>Blast</span>
+                    </button>
 
                     <button
                       onClick={downloadGuestsCSV}
@@ -1094,6 +1176,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                           </th>
                         )}
                         <th className="py-3 px-2">Tamu & Kategori</th>
+                        <th className="py-3 px-2">Undangan</th>
                         <th className="py-3 px-2">Kode / Link Undangan</th>
                         <th className="py-3 px-2">Rawuh? (Pax)</th>
                         <th className="py-3 px-2">Buka</th>
@@ -1103,7 +1186,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                     <tbody className="divide-y divide-stone-850">
                       {filteredGuests.length === 0 ? (
                         <tr>
-                          <td colSpan={isDev ? 6 : 5} className="py-8 text-center text-stone-500 font-mono">
+                          <td colSpan={isDev ? 7 : 6} className="py-8 text-center text-stone-500 font-mono">
                             Tidak ditemukan tamu undangan yang sesuai
                           </td>
                         </tr>
@@ -1126,37 +1209,68 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                                   />
                                 </td>
                               )}
-                              <td className="py-3 px-2 max-w-xs">
-                                {isEditing ? (
-                                  <div className="space-y-1">
-                                    <input
-                                      type="text"
-                                      value={editGuestForm.name || ''}
-                                      onChange={(e) => setEditGuestForm({ ...editGuestForm, name: e.target.value })}
-                                      className="bg-stone-950 border border-stone-800 p-1.5 rounded text-xs w-full"
-                                    />
-                                    <div className="relative">
-                                      <select
-                                        value={editGuestForm.category || ''}
-                                        onChange={(e) => setEditGuestForm({ ...editGuestForm, category: e.target.value })}
-                                        className="appearance-none bg-stone-950 border border-stone-800 pl-1.5 pr-7 py-1.5 rounded text-xs w-full"
-                                      >
-                                        {categories.map((cat) => (
-                                          <option key={cat} value={cat}>{cat}</option>
-                                        ))}
-                                      </select>
-                                      <ChevronDown size={12} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div>
-                                    <p className="font-bold text-white text-sm leading-tight">{g.name}</p>
-                                    <span className="inline-block mt-1 px-2 py-px bg-stone-950 rounded text-[9px] font-mono text-white-gentle">
-                                      {g.category}
-                                    </span>
-                                  </div>
-                                )}
-                              </td>
+                          <td className="py-3 px-2 max-w-xs">
+                            {isEditing ? (
+                              <div className="space-y-1">
+                                <input
+                                  type="text"
+                                  value={editGuestForm.name || ''}
+                                  onChange={(e) => setEditGuestForm({ ...editGuestForm, name: e.target.value })}
+                                  className="bg-stone-950 border border-stone-800 p-1.5 rounded text-xs w-full"
+                                />
+                                <div className="relative">
+                                  <select
+                                    value={editGuestForm.category || ''}
+                                    onChange={(e) => setEditGuestForm({ ...editGuestForm, category: e.target.value })}
+                                    className="appearance-none bg-stone-950 border border-stone-800 pl-1.5 pr-7 py-1.5 rounded text-xs w-full"
+                                  >
+                                    {categories.map((cat) => (
+                                      <option key={cat} value={cat}>{cat}</option>
+                                    ))}
+                                  </select>
+                                  <ChevronDown size={12} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
+                                </div>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="font-bold text-white text-sm leading-tight">{g.name}</p>
+                                <span className="inline-block mt-1 px-2 py-px bg-stone-950 rounded text-[9px] font-mono text-white-gentle">
+                                  {g.category}
+                                </span>
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-2">
+                            {isEditing ? (
+                              <div className="relative">
+                                <select
+                                  value={editGuestForm.invite_type || 'digital'}
+                                  onChange={(e) => setEditGuestForm({ ...editGuestForm, invite_type: e.target.value as InviteType })}
+                                  className="appearance-none bg-stone-950 border border-stone-800 pl-1.5 pr-7 py-1.5 rounded text-[10px] w-full"
+                                >
+                                  <option value="digital">Digital</option>
+                                  <option value="cetak">Cetak</option>
+                                </select>
+                                <ChevronDown size={12} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
+                              </div>
+                            ) : (
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-semibold ${
+                                (g.invite_type || 'digital') === 'cetak'
+                                  ? 'bg-stone-800 text-stone-300 border border-stone-700'
+                                  : 'bg-amber-950/60 text-amber-300 border border-amber-800/40'
+                              }`}
+                                title={(g.invite_type || 'digital') === 'cetak'
+                                  ? 'Undangan cetak: tanpa blast pesan digital dan tanpa pengingat RSVP'
+                                  : 'Undangan digital: menerima pesan undangan dan pengingat RSVP'
+                                }
+                              >
+                                {(g.invite_type || 'digital') === 'cetak' ? <Printer size={10} /> : <Share2 size={10} />}
+                                {(g.invite_type || 'digital') === 'cetak' ? 'Cetak' : 'Digital'}
+                              </span>
+                            )}
+                          </td>
+
 
                               <td className="py-3 px-2 font-mono">
                                 <div className="space-y-1">
@@ -1258,7 +1372,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                                           target="_blank"
                                           rel="noreferrer"
                                           className="p-1 px-2.5 rounded bg-green-950 text-green-400 border border-green-800 flex items-center justify-center gap-1 hover:bg-green-900 transition-colors"
-                                          title="Buka WhatsApp Chat"
+                                          title={(g.invite_type || 'digital') === 'cetak'
+                                            ? 'Kirim manual ke tamu cetak (tidak ikut blast otomatis)'
+                                            : 'Buka WhatsApp Chat'}
                                         >
                                           <Smartphone size={11} />
                                           <span className="text-[10px]">Kirim</span>
@@ -1442,17 +1558,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
 
                   <h3 className="font-serif text-lg font-bold text-white-gentle tracking-wide mb-2">Impor Banyak Tamu Sekaligus</h3>
                   <p className="text-xs text-white font-sans leading-normal mb-6">
-                    Tuliskan atau tempel nama tamu secara terstruktur, maksimal satu baris per orang. Anda bisa memisahkan nama, kategori, dan nomor HP memakai koma (,) atau titik-koma (;).
+                    Tuliskan atau tempel nama tamu secara terstruktur, maksimal satu baris per orang. Anda bisa memisahkan nama, kategori, nomor HP, dan jenis undangan memakai koma (,) atau titik-koma (;).
                     <br />
                     <span className="text-white font-semibold font-mono block mt-1.5 p-2 bg-stone-950 rounded text-[11px]">
-                      Format baris: Nama Tamu, Kategori (Opsional), WhatsApp (Opsional)
+                      Format baris: Nama Tamu, Kategori (Opsional), WhatsApp (Opsional), Jenis Undangan (Opsional)
                     </span>
                     <br />
                     Contoh baris input:
                     <br />
                     <span className="font-mono text-[10px] leading-tight text-white-gentle block max-w-xs mt-1">
                       Budi Raharjo, Keluarga Inti, 6281223344<br />
-                      Siska Melinda; Rekan Kerja; 628994433
+                      Siska Melinda; Rekan Kerja; 628994433<br />
+                      Pak Hendra; Tetangga; 628123321; cetak
                     </span>
                   </p>
 
@@ -1473,6 +1590,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                         </div>
                      </div>
 
+                     <div>
+                       <label className="block text-xs uppercase tracking-widest text-white mb-1">Jenis Undangan Default (Jika baris tidak menyebutkan)</label>
+                        <div className="relative">
+                          <select
+                            value={bulkInviteType}
+                            onChange={(e) => setBulkInviteType(e.target.value as InviteType)}
+                            className="w-full appearance-none bg-stone-950 border border-stone-800 rounded-xl pl-3 pr-9 py-3 focus:border-gold-gentle focus:outline-none text-xs"
+                          >
+                            <option value="digital">Digital (tautan)</option>
+                            <option value="cetak">Cetak (undangan fisik)</option>
+                          </select>
+                          <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
+                        </div>
+                        <p className="text-[10px] text-stone-400 mt-1 leading-relaxed">
+                          Tamu dengan undangan cetak otomatis ditandai hadir, tidak ikut blast pesan digital, dan tidak menerima pengingat RSVP.
+                        </p>
+                     </div>
+
                      <div className="border-t border-stone-800 pt-4">
                        <label className="block text-xs uppercase tracking-widest text-white mb-2">Atau Import dari Excel</label>
                        <input
@@ -1488,22 +1623,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                        {excelPreview.length > 0 && (
                          <div className="mt-3 max-h-48 overflow-y-auto border border-stone-800 rounded-xl">
                            <table className="w-full text-left text-[11px]">
-                             <thead className="bg-stone-950 text-white-gentle uppercase">
-                               <tr>
-                                 <th className="p-2">Nama</th>
-                                 <th className="p-2">Kategori</th>
-                                 <th className="p-2">WhatsApp</th>
-                               </tr>
-                             </thead>
-                             <tbody>
-                               {excelPreview.slice(0, 20).map((row, idx) => (
-                                 <tr key={idx} className="border-t border-stone-800">
-                                   <td className="p-2 text-white">{row.name}</td>
-                                   <td className="p-2 text-white">{row.category || '-'}</td>
-                                   <td className="p-2 text-white font-mono">{row.whatsapp || '-'}</td>
-                                 </tr>
-                               ))}
-                             </tbody>
+                              <thead className="bg-stone-950 text-white-gentle uppercase">
+                                <tr>
+                                  <th className="p-2">Nama</th>
+                                  <th className="p-2">Kategori</th>
+                                  <th className="p-2">WhatsApp</th>
+                                  <th className="p-2">Undangan</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {excelPreview.slice(0, 20).map((row, idx) => (
+                                  <tr key={idx} className="border-t border-stone-800">
+                                    <td className="p-2 text-white">{row.name}</td>
+                                    <td className="p-2 text-white">{row.category || '-'}</td>
+                                    <td className="p-2 text-white font-mono">{row.whatsapp || '-'}</td>
+                                    <td className="p-2 text-white">{row.invite_type === 'cetak' ? 'Cetak' : 'Digital'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
                            </table>
                            {excelPreview.length > 20 && (
                              <p className="text-[10px] text-stone-500 p-2">...dan {excelPreview.length - 20} baris lainnya</p>

@@ -1,5 +1,8 @@
 export const OTHER_CATEGORY = 'Other';
 
+/** Jenis undangan tamu: digital (tautan) atau cetak (undangan fisik) */
+export type InviteType = 'digital' | 'cetak';
+
 export interface Guest {
   id: number;
   code: string;
@@ -13,6 +16,7 @@ export interface Guest {
   status_active: number; // 1 for active, 0 for disabled
   event_key: EventKey | null; // acara yang dipilih tamu
   arrival_time: string | null; // jam datang yang diisi tamu (HH:MM)
+  invite_type: InviteType; // digital (tautan) atau cetak (undangan fisik)
 }
 
 export interface Comment {

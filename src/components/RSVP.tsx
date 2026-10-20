@@ -103,9 +103,12 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 	};
 
 	// Gate appears only from the guest's second visit onward (persisted via localStorage),
-	// so first-time visitors can read the event schedule before being asked to confirm
+	// so first-time visitors can read the event schedule before being asked to confirm.
+	// Tamu dengan undangan cetak tidak mendapat pengingat RSVP otomatis.
+	const isPrintedInvite = (guest?.invite_type || 'digital') === 'cetak';
+
 	useEffect(() => {
-		if (!guest || guest.status !== 'belum_respon') {
+		if (!guest || guest.status !== 'belum_respon' || isPrintedInvite) {
 			setGateOpen(false);
 			return;
 		}
@@ -120,7 +123,7 @@ export const RSVP: React.FC<RSVPProps> = ({ guest, content, settings, onRsvpSubm
 		if (!alreadySeen) return;
 		const t = setTimeout(() => setGateOpen(true), 1800);
 		return () => clearTimeout(t);
-	}, [guest?.status]);
+	}, [guest?.status, isPrintedInvite]);
 
 
 	// Close the gate and bring the guest to the full form

@@ -304,7 +304,8 @@ app.get('/api/public/invitation/:code', rateLimiter(100, 60000), async (req, res
         arrival_time: guest.arrival_time || null,
         opened_count: updatedCount,
         last_opened_at: nowISO,
-        status_active: guest.status_active
+        status_active: guest.status_active,
+        invite_type: normalizeInviteType(guest.invite_type)
       },
       comments: commentsRs.rows,
       content,
@@ -566,8 +567,17 @@ app.get('/api/admin-undangan-ria-iqram/guests', authenticateAdmin, async (req, r
   }
 });
 
+// Normalisasi jenis undangan: digital (tautan) atau cetak (undangan fisik).
+// Nilai lain seperti "print", "printed", "offline", "fisik" dianggap cetak.
+function normalizeInviteType(value: any): 'digital' | 'cetak' {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (!raw) return 'digital';
+  if (['cetak', 'print', 'printed', 'offline', 'fisik', 'kertas'].some((k) => raw.includes(k))) return 'cetak';
+  return 'digital';
+}
+
 app.post('/api/admin-undangan-ria-iqram/guests', authenticateAdmin, async (req, res) => {
-  const { name, category, whatsapp } = req.body;
+  const { name, category, whatsapp, invite_type } = req.body;
   if (!name || name.trim() === '') return res.status(400).json({ error: 'Nama tamu tidak boleh kosong' });
 
   try {
@@ -580,13 +590,20 @@ app.post('/api/admin-undangan-ria-iqram/guests', authenticateAdmin, async (req, 
     }
 
     const cleanedWA = (whatsapp || '').trim().replace(/[^0-9]/g, '');
-    const infoRs = await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: [code, name.trim(), (category || 'Keluarga').trim(), cleanedWA] });
+    const type = normalizeInviteType(invite_type);
+    // Tamu dengan undangan cetak otomatis dianggap hadir
+    const status = type === 'cetak' ? 'hadir' : 'belum_respon';
+    const guestCount = type === 'cetak' ? 1 : 0;
+    const infoRs = await db.execute({
+      sql: 'INSERT INTO guests (code, name, category, whatsapp, status, guest_count, invite_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      args: [code, name.trim(), (category || 'Keluarga').trim(), cleanedWA, status, guestCount, type]
+    });
     const id = Number(infoRs.lastInsertRowid);
 
-    addAuditLog('GUEST_CREATED', `Tamu '${name}' berhasil didaftarkan (Code: ${code})`);
+    addAuditLog('GUEST_CREATED', `Tamu '${name}' berhasil didaftarkan (Code: ${code}, Undangan: ${type})`);
     res.json({
       success: true,
-      guest: { id, code, name: name.trim(), category: category || 'Keluarga', whatsapp: cleanedWA, status: 'belum_respon', guest_count: 0, opened_count: 0 }
+      guest: { id, code, name: name.trim(), category: category || 'Keluarga', whatsapp: cleanedWA, status, guest_count: guestCount, opened_count: 0, invite_type: type }
     });
   } catch (err: any) {
     res.status(500).json({ error: 'Gagal membuat tamu: ' + err.message });
@@ -611,7 +628,14 @@ app.post('/api/admin-undangan-ria-iqram/guests/bulk', authenticateAdmin, async (
       }
 
       const cleanedWA = (item.whatsapp || '').toString().trim().replace(/[^0-9]/g, '');
-      const infoRs = await db.execute({ sql: 'INSERT INTO guests (code, name, category, whatsapp) VALUES (?, ?, ?, ?)', args: [code, item.name.trim(), (item.category || 'Keluarga').trim(), cleanedWA] });
+      const type = normalizeInviteType(item.invite_type);
+      // Tamu dengan undangan cetak otomatis dianggap hadir
+      const status = type === 'cetak' ? 'hadir' : 'belum_respon';
+      const guestCount = type === 'cetak' ? 1 : 0;
+      const infoRs = await db.execute({
+        sql: 'INSERT INTO guests (code, name, category, whatsapp, status, guest_count, invite_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        args: [code, item.name.trim(), (item.category || 'Keluarga').trim(), cleanedWA, status, guestCount, type]
+      });
 
       insertedGuests.push({
         id: Number(infoRs.lastInsertRowid),
@@ -619,9 +643,10 @@ app.post('/api/admin-undangan-ria-iqram/guests/bulk', authenticateAdmin, async (
         name: item.name.trim(),
         category: item.category || 'Keluarga',
         whatsapp: cleanedWA,
-        status: 'belum_respon',
-        guest_count: 0,
-        opened_count: 0
+        status,
+        guest_count: guestCount,
+        opened_count: 0,
+        invite_type: type
       });
     }
 
@@ -691,23 +716,27 @@ app.post('/api/admin-undangan-ria-iqram/guests/batch-qr', authenticateAdmin, asy
 
 app.put('/api/admin-undangan-ria-iqram/guests/:id', authenticateAdmin, async (req, res) => {
   const { id } = req.params;
-  const { name, category, whatsapp, status, guest_count, status_active } = req.body;
+  const { name, category, whatsapp, status, guest_count, status_active, invite_type } = req.body;
 
   if (!name || name.trim() === '') return res.status(400).json({ error: 'Nama tamu tidak boleh kosong' });
 
   try {
     const cleanedWA = (whatsapp || '').trim().replace(/[^0-9]/g, '');
+    const type = normalizeInviteType(invite_type);
     const numGuest = parseInt(guest_count) || 0;
     const activeVal = status_active !== undefined ? (status_active ? 1 : 0) : 1;
+    // Tamu dengan undangan cetak otomatis dianggap hadir
+    const finalStatus = type === 'cetak' ? 'hadir' : (status || 'belum_respon');
+    const finalCount = type === 'cetak' ? (numGuest > 0 ? numGuest : 1) : numGuest;
 
     const result = await db.execute({
-      sql: `UPDATE guests SET name = ?, category = ?, whatsapp = ?, status = ?, guest_count = ?, status_active = ? WHERE id = ?`,
-      args: [name.trim(), category || 'Keluarga', cleanedWA, status || 'belum_respon', numGuest, activeVal, id]
+      sql: `UPDATE guests SET name = ?, category = ?, whatsapp = ?, status = ?, guest_count = ?, status_active = ?, invite_type = ? WHERE id = ?`,
+      args: [name.trim(), category || 'Keluarga', cleanedWA, finalStatus, finalCount, activeVal, type, id]
     });
 
     if (result.rowsAffected === 0) return res.status(404).json({ error: 'Tamu tidak ditemukan' });
 
-    addAuditLog('GUEST_UPDATED', `Tamu ID ${id} '${name}' telah diperbarui`);
+    addAuditLog('GUEST_UPDATED', `Tamu ID ${id} '${name}' telah diperbarui (Undangan: ${type})`);
     res.json({ success: true, message: 'Tamu berhasil diperbarui' });
   } catch (err: any) {
     res.status(500).json({ error: 'Gagal memperbarui tamu' + err.message });

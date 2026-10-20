@@ -218,6 +218,7 @@ async function setKV(key: string, value: any) {
 const GUEST_COLUMN_MIGRATIONS: Array<[string, string]> = [
   ['event_key', 'ALTER TABLE guests ADD COLUMN event_key TEXT'],
   ['arrival_time', 'ALTER TABLE guests ADD COLUMN arrival_time TEXT'],
+  ['invite_type', "ALTER TABLE guests ADD COLUMN invite_type TEXT DEFAULT 'digital'"],
 ];
 
 export async function ensureGuestColumns() {
@@ -247,7 +248,8 @@ export async function bootstrapData() {
       last_opened_at TEXT,
       status_active INTEGER DEFAULT 1,
       event_key TEXT,
-      arrival_time TEXT
+      arrival_time TEXT,
+      invite_type TEXT DEFAULT 'digital'
     );
 
     CREATE TABLE IF NOT EXISTS rsvp_comments (
