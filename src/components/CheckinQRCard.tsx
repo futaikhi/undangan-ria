@@ -121,7 +121,7 @@ const renderTicketCard = async (qr: QrTicketData, content: Content): Promise<str
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
 
-	const couple = `${content.groom.nickname} & ${content.bride.nickname}`;
+	const couple = `${content.groom.nickname} & ${content.bride.nickname}`.toUpperCase();
 	const coupleSize = fitFont(ctx, couple, W - 200, 56, serif);
 	ctx.font = `700 ${coupleSize}px ${serif}`;
 	ctx.fillStyle = brown;

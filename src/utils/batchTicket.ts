@@ -119,45 +119,45 @@ export async function renderPrintTicket(
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
 
-	const couple = `${content.groom.nickname} & ${content.bride.nickname}`;
-	const coupleSize = fitFont(ctx, couple, TICKET_W - 230, 78, serif);
+	const couple = `${content.groom.nickname} & ${content.bride.nickname}`.toUpperCase();
+	const coupleSize = fitFont(ctx, couple, TICKET_W - 220, 72, serif);
 	ctx.font = `700 ${coupleSize}px ${serif}`;
 	ctx.fillStyle = brown;
-	ctx.fillText(couple, centerX, 156);
+	ctx.fillText(couple, centerX, 140);
 
 	ctx.strokeStyle = goldSoft;
 	ctx.lineWidth = 2;
 	ctx.beginPath();
-	ctx.moveTo(centerX - 205, 224);
-	ctx.lineTo(centerX + 205, 224);
+	ctx.moveTo(centerX - 200, 200);
+	ctx.lineTo(centerX + 200, 200);
 	ctx.stroke();
-	diamond(centerX, 224, 9);
+	diamond(centerX, 200, 9);
 
 	const ticketLabel = 'B A R C O D E   C H E C K - I N';
-	const ticketSize = fitFont(ctx, ticketLabel, TICKET_W - 180, 48, sans);
+	const ticketSize = fitFont(ctx, ticketLabel, TICKET_W - 180, 44, sans);
 	ctx.font = `700 ${ticketSize}px ${sans}`;
 	ctx.fillStyle = batik;
-	ctx.fillText(ticketLabel, centerX, 292);
-	ctx.font = `400 26px ${sans}`;
+	ctx.fillText(ticketLabel, centerX, 256);
+	ctx.font = `400 24px ${sans}`;
 	ctx.fillStyle = stone;
-	ctx.fillText('Simpan tiket ini dan bawa saat acara', centerX, 340);
+	ctx.fillText('Simpan tiket ini dan bawa saat acara', centerX, 300);
 
 	ctx.strokeStyle = goldSoft;
 	ctx.lineWidth = 2;
 	ctx.beginPath();
-	ctx.moveTo(190, 396);
-	ctx.lineTo(centerX - 90, 396);
-	ctx.moveTo(centerX + 90, 396);
-	ctx.lineTo(TICKET_W - 190, 396);
+	ctx.moveTo(190, 346);
+	ctx.lineTo(centerX - 85, 346);
+	ctx.moveTo(centerX + 85, 346);
+	ctx.lineTo(TICKET_W - 190, 346);
 	ctx.stroke();
-	diamond(centerX, 396, 10);
+	diamond(centerX, 346, 9);
 
-	// QR remains comfortably scannable at approximately 3.1 cm when printed.
-	// Shifted lower to center the ticket's visual weight between header and footer.
-	const qrSize = 730;
-	const qrY = 510;
+	// QR diperbesar hingga mendekati batas lebar aman agar mudah dipindai.
+	const qrSize = 1030;
+	const qrY = 376;
+	const qrPad = 28;
 	ctx.fillStyle = '#ffffff';
-	roundRectPath(ctx, centerX - qrSize / 2 - 34, qrY - 34, qrSize + 68, qrSize + 68, 46);
+	roundRectPath(ctx, centerX - qrSize / 2 - qrPad, qrY - qrPad, qrSize + qrPad * 2, qrSize + qrPad * 2, 44);
 	ctx.fill();
 	ctx.strokeStyle = gold;
 	ctx.lineWidth = 3;
@@ -165,44 +165,45 @@ export async function renderPrintTicket(
 	const qrImg = await loadImage(ticket.qrDataUrl);
 	ctx.drawImage(qrImg, centerX - qrSize / 2, qrY, qrSize, qrSize);
 
-	const panelY = 1340;
+	const panelY = 1470;
+	const panelH = 270;
 	ctx.fillStyle = '#f8f1e3';
-	roundRectPath(ctx, 142, panelY, TICKET_W - 284, 314, 30);
+	roundRectPath(ctx, 142, panelY, TICKET_W - 284, panelH, 28);
 	ctx.fill();
 	ctx.strokeStyle = '#e4d2ad';
 	ctx.lineWidth = 2;
 	ctx.stroke();
 
-	ctx.font = `600 26px ${sans}`;
+	ctx.font = `600 24px ${sans}`;
 	ctx.fillStyle = batik;
-	ctx.fillText('A T A S   N A M A', centerX, panelY + 68);
-	const nameSize = fitFont(ctx, ticket.payload.name, TICKET_W - 380, 58, serif);
+	ctx.fillText('A T A S   N A M A', centerX, panelY + 54);
+	const nameSize = fitFont(ctx, ticket.payload.name, TICKET_W - 360, 54, serif);
 	ctx.font = `700 ${nameSize}px ${serif}`;
 	ctx.fillStyle = brown;
-	ctx.fillText(ticket.payload.name, centerX, panelY + 150);
+	ctx.fillText(ticket.payload.name, centerX, panelY + 128);
 	ctx.strokeStyle = goldSoft;
 	ctx.lineWidth = 2;
 	ctx.beginPath();
-	ctx.moveTo(centerX - 125, panelY + 206);
-	ctx.lineTo(centerX + 125, panelY + 206);
+	ctx.moveTo(centerX - 120, panelY + 176);
+	ctx.lineTo(centerX + 120, panelY + 176);
 	ctx.stroke();
-	ctx.font = `400 29px ${sans}`;
+	ctx.font = `400 28px ${sans}`;
 	ctx.fillStyle = stone;
-	ctx.fillText(`Kode: ${ticket.payload.code}`, centerX, panelY + 255);
+	ctx.fillText(`Kode: ${ticket.payload.code}`, centerX, panelY + 222);
 
-	const footerY = 1885;
+	const footerSepY = 1785;
 	ctx.strokeStyle = goldSoft;
 	ctx.lineWidth = 2;
 	ctx.beginPath();
-	ctx.moveTo(190, footerY - 76);
-	ctx.lineTo(TICKET_W - 190, footerY - 76);
+	ctx.moveTo(190, footerSepY);
+	ctx.lineTo(TICKET_W - 190, footerSepY);
 	ctx.stroke();
-	ctx.font = `700 34px ${sans}`;
+	ctx.font = `700 52px ${sans}`;
 	ctx.fillStyle = batik;
-	ctx.fillText('Pindai QR ini saat tiba di lokasi acara', centerX, footerY);
-	ctx.font = `600 24px ${sans}`;
+	ctx.fillText('Pindai QR ini saat tiba di lokasi acara', centerX, footerSepY + 76);
+	ctx.font = `600 28px ${sans}`;
 	ctx.fillStyle = stone;
-	ctx.fillText('duwegawe.com', centerX, footerY + 56);
+	ctx.fillText('duwegawe.com', centerX, footerSepY + 160);
 
 	return new Promise((resolve, reject) => {
 		canvas.toBlob(
