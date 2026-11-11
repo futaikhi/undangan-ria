@@ -18,9 +18,9 @@ export interface BatchQrTicket {
 	error?: string;
 }
 
-// 5 × 7 cm at 600 DPI for crisp print quality
-const TICKET_W = 1182;
-const TICKET_H = 1654;
+// 6 × 9 cm at 600 DPI for a compact physical invitation insert.
+const TICKET_W = 1417;
+const TICKET_H = 2126;
 
 const loadImage = (src: string): Promise<HTMLImageElement> =>
 	new Promise((resolve, reject) => {
@@ -69,8 +69,8 @@ function sanitizeFileName(name: string): string {
 }
 
 /**
- * Render a single 5×7 cm print-ready ticket card as a PNG Blob.
- * Design adapted from CheckinQRCard.renderTicketCard but compact for print.
+ * Render a single 6×9 cm print-ready ticket card as a PNG Blob.
+ * A dense, balanced layout maximizes the smaller physical insert without dead space.
  */
 export async function renderPrintTicket(
 	ticket: BatchQrTicket,
@@ -90,105 +90,119 @@ export async function renderPrintTicket(
 	const stone = '#6b5f45';
 	const serif = 'Georgia, "Times New Roman", serif';
 	const sans = 'Lato, Arial, sans-serif';
+	const centerX = TICKET_W / 2;
 
-	// Background
 	ctx.fillStyle = cream;
 	ctx.fillRect(0, 0, TICKET_W, TICKET_H);
 
-	// Double gold border
 	ctx.strokeStyle = gold;
 	ctx.lineWidth = 10;
-	ctx.strokeRect(36, 36, TICKET_W - 72, TICKET_H - 72);
+	ctx.strokeRect(38, 38, TICKET_W - 76, TICKET_H - 76);
 	ctx.lineWidth = 3;
-	ctx.strokeRect(62, 62, TICKET_W - 124, TICKET_H - 124);
+	ctx.strokeRect(64, 64, TICKET_W - 128, TICKET_H - 128);
 
-	// Corner diamond ornaments
-	const diamond = (cx: number, cy: number, s: number) => {
+	const diamond = (cx: number, cy: number, size: number) => {
 		ctx.fillStyle = gold;
 		ctx.beginPath();
-		ctx.moveTo(cx, cy - s);
-		ctx.lineTo(cx + s, cy);
-		ctx.lineTo(cx, cy + s);
-		ctx.lineTo(cx - s, cy);
+		ctx.moveTo(cx, cy - size);
+		ctx.lineTo(cx + size, cy);
+		ctx.lineTo(cx, cy + size);
+		ctx.lineTo(cx - size, cy);
 		ctx.closePath();
 		ctx.fill();
 	};
-	diamond(62, 62, 13);
-	diamond(TICKET_W - 62, 62, 13);
-	diamond(62, TICKET_H - 62, 13);
-	diamond(TICKET_W - 62, TICKET_H - 62, 13);
+	diamond(94, 94, 15);
+	diamond(TICKET_W - 94, 94, 15);
+	diamond(94, TICKET_H - 94, 15);
+	diamond(TICKET_W - 94, TICKET_H - 94, 15);
 
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
 
-	// Couple names
 	const couple = `${content.groom.nickname} & ${content.bride.nickname}`;
-	const coupleSize = fitFont(ctx, couple, TICKET_W - 260, 82, serif);
+	const coupleSize = fitFont(ctx, couple, TICKET_W - 230, 78, serif);
 	ctx.font = `700 ${coupleSize}px ${serif}`;
 	ctx.fillStyle = brown;
-	ctx.fillText(couple, TICKET_W / 2, 156);
+	ctx.fillText(couple, centerX, 156);
 
-	// Divider
 	ctx.strokeStyle = goldSoft;
 	ctx.lineWidth = 2;
 	ctx.beginPath();
-	ctx.moveTo(TICKET_W / 2 - 170, 235);
-	ctx.lineTo(TICKET_W / 2 + 170, 235);
+	ctx.moveTo(centerX - 205, 224);
+	ctx.lineTo(centerX + 205, 224);
 	ctx.stroke();
+	diamond(centerX, 224, 9);
 
-	// Ticket label — prominent
 	const ticketLabel = 'B A R C O D E   C H E C K - I N';
-	const ticketSize = fitFont(ctx, ticketLabel, TICKET_W - 160, 68, sans);
+	const ticketSize = fitFont(ctx, ticketLabel, TICKET_W - 180, 48, sans);
 	ctx.font = `700 ${ticketSize}px ${sans}`;
 	ctx.fillStyle = batik;
-	ctx.fillText(ticketLabel, TICKET_W / 2, 310);
-
-	// Subtitle
+	ctx.fillText(ticketLabel, centerX, 292);
 	ctx.font = `400 26px ${sans}`;
 	ctx.fillStyle = stone;
-	ctx.fillText('Simpan tiket ini dan bawa saat acara', TICKET_W / 2, 365);
+	ctx.fillText('Simpan tiket ini dan bawa saat acara', centerX, 340);
 
-	// QR inside white rounded frame — vertically centered between header and footer
-	const qrSize = 700;
-	const headerBottom = 385;
-	const footerTop = TICKET_H - 150;
-	const captionSpan = 110 + 72 + 62 + 22;
-	const qrY = Math.round((headerBottom + footerTop - (qrSize + captionSpan)) / 2);
+	ctx.strokeStyle = goldSoft;
+	ctx.lineWidth = 2;
+	ctx.beginPath();
+	ctx.moveTo(190, 396);
+	ctx.lineTo(centerX - 90, 396);
+	ctx.moveTo(centerX + 90, 396);
+	ctx.lineTo(TICKET_W - 190, 396);
+	ctx.stroke();
+	diamond(centerX, 396, 10);
+
+	// QR remains comfortably scannable at approximately 3.1 cm when printed.
+	// Shifted lower to center the ticket's visual weight between header and footer.
+	const qrSize = 730;
+	const qrY = 510;
 	ctx.fillStyle = '#ffffff';
-	roundRectPath(ctx, TICKET_W / 2 - qrSize / 2 - 30, qrY - 30, qrSize + 60, qrSize + 60, 48);
+	roundRectPath(ctx, centerX - qrSize / 2 - 34, qrY - 34, qrSize + 68, qrSize + 68, 46);
 	ctx.fill();
 	ctx.strokeStyle = gold;
 	ctx.lineWidth = 3;
 	ctx.stroke();
 	const qrImg = await loadImage(ticket.qrDataUrl);
-	ctx.drawImage(qrImg, TICKET_W / 2 - qrSize / 2, qrY, qrSize, qrSize);
+	ctx.drawImage(qrImg, centerX - qrSize / 2, qrY, qrSize, qrSize);
 
-	// Guest caption
-	let y = qrY + qrSize + 110;
+	const panelY = 1340;
+	ctx.fillStyle = '#f8f1e3';
+	roundRectPath(ctx, 142, panelY, TICKET_W - 284, 314, 30);
+	ctx.fill();
+	ctx.strokeStyle = '#e4d2ad';
+	ctx.lineWidth = 2;
+	ctx.stroke();
+
 	ctx.font = `600 26px ${sans}`;
 	ctx.fillStyle = batik;
-	ctx.fillText('A T A S   N A M A', TICKET_W / 2, y);
-
-	y += 72;
-	const nameSize = fitFont(ctx, ticket.payload.name, TICKET_W - 220, 52, serif);
+	ctx.fillText('A T A S   N A M A', centerX, panelY + 68);
+	const nameSize = fitFont(ctx, ticket.payload.name, TICKET_W - 380, 58, serif);
 	ctx.font = `700 ${nameSize}px ${serif}`;
 	ctx.fillStyle = brown;
-	ctx.fillText(ticket.payload.name, TICKET_W / 2, y);
-
-	y += 62;
-	ctx.font = `400 30px ${sans}`;
+	ctx.fillText(ticket.payload.name, centerX, panelY + 150);
+	ctx.strokeStyle = goldSoft;
+	ctx.lineWidth = 2;
+	ctx.beginPath();
+	ctx.moveTo(centerX - 125, panelY + 206);
+	ctx.lineTo(centerX + 125, panelY + 206);
+	ctx.stroke();
+	ctx.font = `400 29px ${sans}`;
 	ctx.fillStyle = stone;
-	const countText = ticket.payload.guestCount > 0 ? `  •  ${ticket.payload.guestCount} orang` : '';
-	ctx.fillText(`Kode: ${ticket.payload.code}${countText}`, TICKET_W / 2, y);
+	ctx.fillText(`Kode: ${ticket.payload.code}`, centerX, panelY + 255);
 
-	// Footer — fixed at bottom, balanced with centered content above
-	const footerY = TICKET_H - 130;
-	ctx.font = `400 24px ${sans}`;
-	ctx.fillStyle = goldSoft;
-	ctx.fillText('Pindai QR ini saat tiba di lokasi acara', TICKET_W / 2, footerY);
-	ctx.font = `400 20px ${sans}`;
+	const footerY = 1885;
+	ctx.strokeStyle = goldSoft;
+	ctx.lineWidth = 2;
+	ctx.beginPath();
+	ctx.moveTo(190, footerY - 76);
+	ctx.lineTo(TICKET_W - 190, footerY - 76);
+	ctx.stroke();
+	ctx.font = `700 34px ${sans}`;
+	ctx.fillStyle = batik;
+	ctx.fillText('Pindai QR ini saat tiba di lokasi acara', centerX, footerY);
+	ctx.font = `600 24px ${sans}`;
 	ctx.fillStyle = stone;
-	ctx.fillText('Undangan Pernikahan Digital', TICKET_W / 2, footerY + 42);
+	ctx.fillText('duwegawe.com', centerX, footerY + 56);
 
 	return new Promise((resolve, reject) => {
 		canvas.toBlob(
