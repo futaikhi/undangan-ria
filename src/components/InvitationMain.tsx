@@ -255,8 +255,8 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
           </h2>
           <BatikDivider />
 
-          {/* Cards for Akad & Resepsi */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 mt-16 px-4">
+          {/* Cards for Akad, Pra-Resepsi, and Resepsi */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-8 mt-12 lg:mt-16 px-4">
             
             {/* AKAD */}
             <motion.div
@@ -376,7 +376,7 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.1 }}
-              className="bg-white border-2 border-double border-gold-gentle/40 rounded-3xl p-8 sm:p-10 shadow-xl flex flex-col justify-between hover:border-gold-gentle transition-colors duration-300 relative overflow-hidden"
+              className="sm:col-span-2 sm:w-1/2 sm:justify-self-center bg-white border-2 border-double border-gold-gentle/40 rounded-3xl p-8 sm:p-10 shadow-xl flex flex-col justify-between hover:border-gold-gentle transition-colors duration-300 relative overflow-hidden"
             >
               <div>
                 <div className="w-12 h-12 rounded-full bg-amber-50 border border-gold-gentle flex items-center justify-center mx-auto mb-6 shadow">
