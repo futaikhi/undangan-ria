@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Home, Calendar, Mail } from 'lucide-react';
+import { CalendarDays, Home, Images, Mail, MessageSquare, type LucideIcon } from 'lucide-react';
 
 interface NavItem {
 	key: string;
 	label: string;
 	targetId: string; // empty = scroll to top (hero)
+	icon: LucideIcon;
 }
 
 const ITEMS: NavItem[] = [
-	{ key: 'home', label: 'Beranda', targetId: '' },
-	{ key: 'events', label: 'Acara', targetId: 'section-events' },
-	{ key: 'rsvp', label: 'RSVP', targetId: 'section-rsvp' }
+	{ key: 'home', label: 'Beranda', targetId: '', icon: Home },
+	{ key: 'events', label: 'Acara', targetId: 'section-events', icon: CalendarDays },
+	{ key: 'rsvp', label: 'RSVP', targetId: 'section-rsvp', icon: Mail },
+	{ key: 'gallery', label: 'Galeri', targetId: 'section-gallery', icon: Images },
+	{ key: 'messages', label: 'Ucapan', targetId: 'section-messages-list', icon: MessageSquare }
 ];
 
 export const BottomNav: React.FC = () => {
@@ -40,14 +43,17 @@ export const BottomNav: React.FC = () => {
 
 	// Highlight the section currently in view
 	useEffect(() => {
-		const targets = ['section-events', 'section-rsvp']
+		const targets = ITEMS
+			.filter((item) => item.targetId)
+			.map((item) => item.targetId)
 			.map((id) => document.getElementById(id))
 			.filter((el): el is HTMLElement => !!el);
 		const observer = new IntersectionObserver(
 			(entries) => {
 				entries.forEach((entry) => {
 					if (entry.isIntersecting) {
-						setActive(entry.target.id === 'section-events' ? 'events' : 'rsvp');
+						const activeItem = ITEMS.find((item) => item.targetId === entry.target.id);
+						if (activeItem) setActive(activeItem.key);
 					}
 				});
 			},
@@ -74,30 +80,25 @@ export const BottomNav: React.FC = () => {
 					animate={{ opacity: 1, y: 0 }}
 					exit={{ opacity: 0, y: 40 }}
 					transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-					className="fixed inset-x-0 bottom-0 z-40"
+					className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
 					aria-label="Navigasi halaman"
 				>
-					<div className="flex items-stretch justify-around border-t border-gold-gentle/40 bg-stone-900/90 backdrop-blur-md">
+					<div className="pointer-events-auto flex w-fit max-w-full items-stretch justify-center gap-1 overflow-x-auto rounded-full border border-gold-gentle/35 bg-stone-950/85 p-1 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl">
 						{ITEMS.map((item) => (
 							<button
 								key={item.key}
 								type="button"
 								onClick={() => scrollTo(item)}
-								className={`flex-1 flex flex-col items-center gap-0.5 py-2 transition-all cursor-pointer ${active === item.key
-									? 'bg-gold-gentle/15 text-gold-shine'
-									: 'text-gold-gentle hover:bg-gold-gentle/10 hover:text-gold-shine'
+								className={`flex min-w-[60px] flex-none flex-col items-center gap-1 rounded-full px-2 py-2 transition-all cursor-pointer ${active === item.key
+									? 'bg-gold-gentle/20 text-gold-shine'
+									: 'text-stone-300 hover:bg-gold-gentle/10 hover:text-gold-shine'
 									}`}
 								id={`bottom-nav-${item.key}`}
 								aria-label={item.label}
+								aria-current={active === item.key ? 'location' : undefined}
 							>
-								{item.key === 'home' ? (
-									<Home size={12} />
-								) : item.key === 'events' ? (
-									<Calendar size={12} />
-								) : (
-									<Mail size={12} />
-								)}
-								<span className="text-[10px] uppercase tracking-widest font-bold">
+								<item.icon size={15} />
+								<span className="text-[9px] uppercase tracking-wider font-bold">
 									{item.label}
 								</span>
 							</button>
