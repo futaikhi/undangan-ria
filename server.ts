@@ -5,7 +5,7 @@ import { createServer as createViteServer } from 'vite';
 import app from './api/index.js';
 import { bootstrapData } from './db.js';
 
-const PORT = 3005;
+const PORT = 3000;
 
 async function start() {
   await bootstrapData();

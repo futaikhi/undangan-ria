@@ -142,15 +142,15 @@ export async function renderPrintTicket(
 	ctx.fillStyle = stone;
 	ctx.fillText('Simpan tiket ini dan bawa saat acara', centerX, 300);
 
-	ctx.strokeStyle = goldSoft;
-	ctx.lineWidth = 2;
-	ctx.beginPath();
-	ctx.moveTo(190, 346);
-	ctx.lineTo(centerX - 85, 346);
-	ctx.moveTo(centerX + 85, 346);
-	ctx.lineTo(TICKET_W - 190, 346);
-	ctx.stroke();
-	diamond(centerX, 346, 9);
+	// ctx.strokeStyle = goldSoft;
+	// ctx.lineWidth = 2;
+	// ctx.beginPath();
+	// ctx.moveTo(190, 346);
+	// ctx.lineTo(centerX - 85, 346);
+	// ctx.moveTo(centerX + 85, 346);
+	// ctx.lineTo(TICKET_W - 190, 346);
+	// ctx.stroke();
+	// diamond(centerX, 346, 9);
 
 	// QR diperbesar hingga mendekati batas lebar aman agar mudah dipindai.
 	const qrSize = 1030;
