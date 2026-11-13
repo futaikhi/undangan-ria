@@ -623,10 +623,15 @@ export const InvitationMain: React.FC<InvitationMainProps> = ({
 
           <div className="h-[2px] w-20 bg-gold-gentle/40 my-8"></div>
           
-          <p className="text-[10px] text-stone-500 font-mono tracking-wider">
-            Premium Javanese Wedding Digital Invitation © 2026<br />
-            Designed for Fitria Wulandari & Muhammad Iqram
-          </p>
+          <a
+            href="https://duwegawe.com"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[10px] text-stone-500 font-mono tracking-wider transition-colors hover:text-gold-gentle"
+          >
+            Custom digital invitation by DuweGawe<br />
+            <span className="text-stone-600">duwegawe.com</span>
+          </a>
         </div>
       </footer>
 

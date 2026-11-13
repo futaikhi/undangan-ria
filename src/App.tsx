@@ -148,7 +148,7 @@ export default function App() {
       imageUrl = window.location.origin + imageUrl;
     }
 
-    document.title = `Undangan Pernikahan Ria & Iqram - ${name}`;
+    document.title = `Undangan Pernikahan Ria & Iqram - ${name} | DuweGawe`;
 
     const setMeta = (selector: string, attr: string, value: string) => {
       let el = document.querySelector(selector) as HTMLMetaElement | null;
@@ -165,12 +165,12 @@ export default function App() {
       el.setAttribute(attr, value);
     };
 
-    setMeta('meta[name="description"]', 'content', `Undangan pernikahan Ria & Iqram untuk ${name}. ${text.slice(0, 120)}...`);
-    setMeta('meta[property="og:title"]', 'content', `Undangan Pernikahan Ria & Iqram - ${name}`);
-    setMeta('meta[property="og:description"]', 'content', `Kami mengundang ${name} untuk hadir di acara pernikahan Ria & Iqram.`);
+    setMeta('meta[name="description"]', 'content', `Undangan pernikahan Ria & Iqram untuk ${name}, oleh DuweGawe. ${text.slice(0, 120)}...`);
+    setMeta('meta[property="og:title"]', 'content', `Undangan Pernikahan Ria & Iqram - ${name} | DuweGawe`);
+    setMeta('meta[property="og:description"]', 'content', `Kami mengundang ${name} untuk hadir di acara pernikahan Ria & Iqram. Custom digital invitations & experiences by DuweGawe.`);
     setMeta('meta[property="og:image"]', 'content', imageUrl);
-    setMeta('meta[name="twitter:title"]', 'content', `Undangan Pernikahan Ria & Iqram - ${name}`);
-    setMeta('meta[name="twitter:description"]', 'content', `Kami mengundang ${name} untuk hadir di acara pernikahan Ria & Iqram.`);
+    setMeta('meta[name="twitter:title"]', 'content', `Undangan Pernikahan Ria & Iqram - ${name} | DuweGawe`);
+    setMeta('meta[name="twitter:description"]', 'content', `Kami mengundang ${name} untuk hadir di acara pernikahan Ria & Iqram. Custom digital invitations & experiences by DuweGawe.`);
     setMeta('meta[name="twitter:image"]', 'content', imageUrl);
   };
 
@@ -183,7 +183,7 @@ export default function App() {
   // Landing page describes the invitation service, not a specific guest
   useEffect(() => {
     if (!isLanding) return;
-    document.title = 'Undangan Pernikahan Digital Premium - Pesan Undangan Online';
+    document.title = 'DuweGawe | Custom Digital Invitations & Experiences';
     const setMeta = (selector: string, content: string) => {
       let el = document.querySelector(selector) as HTMLMetaElement | null;
       if (!el) {
@@ -194,9 +194,9 @@ export default function App() {
       }
       el.setAttribute('content', content);
     };
-    setMeta('meta[name="description"]', 'Undangan pernikahan digital premium yang elegan dan interaktif. RSVP, buku tamu digital, galeri foto, dan musik gamelan. Pesan melalui WhatsApp.');
-    setMeta('meta[property="og:title"]', 'Undangan Pernikahan Digital Premium');
-    setMeta('meta[property="og:description"]', 'Buat undangan pernikahan digital yang elegan, interaktif, dan mudah dibagikan ke seluruh tamu.');
+    setMeta('meta[name="description"]', 'DuweGawe menghadirkan custom digital invitations & experiences yang elegan, interaktif, dan mudah dibagikan.');
+    setMeta('meta[property="og:title"]', 'DuweGawe | Custom Digital Invitations & Experiences');
+    setMeta('meta[property="og:description"]', 'Buat undangan digital yang elegan, interaktif, dan dirancang khusus untuk momen Anda bersama DuweGawe.');
   }, [isLanding]);
 
   // Keep invalid invitation views out of search engine indexes

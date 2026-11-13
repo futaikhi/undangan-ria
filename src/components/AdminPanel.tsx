@@ -794,14 +794,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
       {/* 1. TOP NAVBAR BRANDING */}
       <header className="bg-stone-900 border-b border-stone-800 p-4 px-6 sticky top-0 z-50 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-batik-brown text-white-shine border border-gold-gentle rounded-lg flex items-center justify-center font-bold text-md">
-            R&I
-          </div>
+          <a
+            href="https://duwegawe.com"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Kunjungi DuweGawe"
+            className="w-9 h-9 bg-batik-brown text-white-shine border border-gold-gentle rounded-lg flex items-center justify-center font-bold text-[11px] tracking-tight"
+          >
+            DG
+          </a>
           <div>
             <h1 className="font-serif text-md md:text-lg text-white font-bold leading-none tracking-wide">
               Iqram & Ria Wedding Dashboard
             </h1>
-            <span className="text-[10px] text-white-gentle/80 uppercase font-mono tracking-wider">SECURE ADM PANEL</span>
+            <span className="text-[10px] text-white-gentle/80 uppercase font-mono tracking-wider">DuweGawe · Secure Admin Panel</span>
           </div>
         </div>
 

@@ -21,10 +21,11 @@ import {
 import { BatikDivider, BatikMandala, CornerOrnament } from './BatikOrnament';
 
 const CREATOR_CONTACT = {
-  brand: 'Undangan Pernikahan Digital Premium',
-  website: 'https://futaikhi.vercel.app',
-  whatsapp: '6289636633664',
-  instagram: '@futaikhi',
+  brand: 'DuweGawe',
+  tagline: 'Custom digital invitations & experiences.',
+  website: 'https://duwegawe.com',
+  whatsapp: '628975896186',
+  instagram: '@duwegawe.project',
   email: 'futaikhi.fut@gmail.com'
 };
 
@@ -85,6 +86,9 @@ export const LandingPage: React.FC = () => {
             <Heart size={16} className="text-batik-brown" />
             <span className="font-display text-xs sm:text-sm font-semibold tracking-wide text-stone-800">
               {CREATOR_CONTACT.brand}
+            </span>
+            <span className="hidden sm:inline text-[10px] text-stone-500">
+              {CREATOR_CONTACT.tagline}
             </span>
           </div>
           <a
@@ -314,7 +318,15 @@ export const LandingPage: React.FC = () => {
       </section>
 
       <footer className="border-t border-gold-gentle/20 py-8 text-center">
-        <p className="font-display text-xs tracking-wide text-stone-700">{CREATOR_CONTACT.brand}</p>
+        <a
+          href={CREATOR_CONTACT.website}
+          target="_blank"
+          rel="noreferrer"
+          className="font-display text-xs tracking-wide text-stone-700 hover:text-batik-brown"
+        >
+          {CREATOR_CONTACT.brand}
+        </a>
+        <p className="mt-1 text-[10px] text-stone-500">{CREATOR_CONTACT.tagline}</p>
         <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-stone-500 mt-2">
           Crafted with Love · Indonesian Digital Wedding Invitation
         </p>
