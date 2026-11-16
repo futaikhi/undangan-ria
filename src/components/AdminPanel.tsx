@@ -792,30 +792,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100 font-sans pb-12">
       {/* 1. TOP NAVBAR BRANDING */}
-      <header className="bg-stone-900 border-b border-stone-800 p-4 px-6 sticky top-0 z-50 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="bg-stone-900 border-b border-stone-800 px-4 py-3 md:px-6 md:py-4 sticky top-0 z-50 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <a
             href="https://duwegawe.com"
             target="_blank"
             rel="noreferrer"
             aria-label="Kunjungi DuweGawe"
-            className="w-9 h-9 bg-batik-brown text-white-shine border border-gold-gentle rounded-lg flex items-center justify-center font-bold text-[11px] tracking-tight"
+            className="w-9 h-9 shrink-0 bg-batik-brown text-white-shine border border-gold-gentle rounded-lg flex items-center justify-center font-bold text-[11px] tracking-tight"
           >
             DG
           </a>
-          <div>
-            <h1 className="font-serif text-md md:text-lg text-white font-bold leading-none tracking-wide">
+          <div className="min-w-0">
+            <h1 className="font-serif text-sm sm:text-base md:text-lg text-white font-bold leading-tight tracking-wide truncate">
               Iqram & Ria Wedding Dashboard
             </h1>
-            <span className="text-[10px] text-white-gentle/80 uppercase font-mono tracking-wider">DuweGawe · Secure Admin Panel</span>
+            <span className="block text-[10px] text-white-gentle/80 uppercase font-mono tracking-wider truncate">DuweGawe · Secure Admin Panel</span>
           </div>
         </div>
 
         <button
           onClick={onLogout}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-stone-800 text-xs text-white hover:text-white hover:bg-stone-800 cursor-pointer transition-colors"
+          className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg border border-stone-800 text-xs text-white hover:text-white hover:bg-stone-800 cursor-pointer transition-colors"
         >
-          <LogOut size={13} />
+          <LogOut size={14} />
           <span className="hidden sm:inline">Keluar</span>
         </button>
       </header>
@@ -916,7 +916,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         )}
 
         {/* 3. TABS HEADER NAVIGATION CONTROL */}
-        <div className="flex items-center gap-2 overflow-x-auto border-b border-stone-800 mb-8 pb-px">
+        <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto border-b border-stone-800 mb-6 sm:mb-8 pb-px -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {[
             { id: 'guests', label: 'Daftar Tamu & WA', icon: Users },
             { id: 'content', label: 'Isi Detail Undangan', icon: Settings },
@@ -928,13 +928,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-5 py-3 text-xs uppercase tracking-widest font-semibold cursor-pointer border-b-2 whitespace-nowrap transition-colors ${
+                className={`flex items-center gap-2 px-4 sm:px-5 py-3 text-[11px] sm:text-xs uppercase tracking-wide sm:tracking-widest font-semibold cursor-pointer border-b-2 whitespace-nowrap transition-colors min-h-[44px] ${
                   activeTab === tab.id
                     ? 'border-gold-gentle text-white-shine bg-stone-900'
-                    : 'border-transparent text-white hover:text-white hover:bg-stone-900'
+                    : 'border-transparent text-stone-300 hover:text-white hover:bg-stone-900'
                 }`}
               >
-                <Icon size={13} />
+                <Icon size={14} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -1043,75 +1043,77 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
               <div className="lg:col-span-8 bg-stone-900 border border-stone-800 rounded-2xl p-5 shadow flex flex-col justify-between">
                 
                 {/* Search / Filters Headers */}
-                <div className="flex flex-col sm:flex-row gap-3 items-center justify-between border-b border-stone-850 pb-4 mb-4">
-                  <div className="relative w-full sm:w-64">
+                <div className="flex flex-col gap-3 border-b border-stone-850 pb-4 mb-4">
+                  <div className="relative w-full">
                     <Search className="absolute left-3 top-3.5 text-stone-500" size={14} />
                     <input
                       type="text"
                       placeholder="Cari nama, kode, nomor..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl py-2.5 pl-9 pr-4 text-xs focus:border-gold-gentle focus:outline-none"
+                      className="w-full bg-stone-950 border border-stone-800 rounded-xl py-3 pl-9 pr-4 text-sm sm:text-xs focus:border-gold-gentle focus:outline-none"
                     />
                   </div>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full text-xs">
                     <div className="relative">
                       <select
                         value={filterCategory}
                         onChange={(e) => setFilterCategory(e.target.value)}
-                        className="appearance-none bg-stone-950 border border-stone-800 rounded-lg pl-2 pr-8 py-2 focus:outline-none"
+                        className="w-full appearance-none bg-stone-950 border border-stone-800 rounded-lg pl-3 pr-8 py-2.5 focus:outline-none"
                       >
                         <option value="Semua">Semua Kategori</option>
                         {categories.map((cat) => (
                           <option key={cat} value={cat}>{cat}</option>
                         ))}
                       </select>
-                      <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
+                      <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
                     </div>
 
                     <div className="relative">
                       <select
                         value={filterStatus}
                         onChange={(e) => setFilterStatus(e.target.value)}
-                        className="appearance-none bg-stone-950 border border-stone-800 rounded-lg pl-2 pr-8 py-2 focus:outline-none"
+                        className="w-full appearance-none bg-stone-950 border border-stone-800 rounded-lg pl-3 pr-8 py-2.5 focus:outline-none"
                       >
                         <option value="Semua">Semua Status</option>
                         <option value="hadir">Sanggup Hadir (Y)</option>
                         <option value="tidak_hadir">Absen (N)</option>
                         <option value="belum_respon">Menunggu (?)</option>
                       </select>
-                      <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
+                      <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
                     </div>
 
                     <div className="relative">
                       <select
                         value={filterInviteType}
                         onChange={(e) => setFilterInviteType(e.target.value)}
-                        className="appearance-none bg-stone-950 border border-stone-800 rounded-lg pl-2 pr-8 py-2 focus:outline-none"
+                        className="w-full appearance-none bg-stone-950 border border-stone-800 rounded-lg pl-3 pr-8 py-2.5 focus:outline-none"
                       >
                         <option value="Semua">Semua Undangan</option>
                         <option value="digital">Digital</option>
                         <option value="cetak">Cetak</option>
                       </select>
-                      <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
+                      <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-500 pointer-events-none" />
                     </div>
+                  </div>
 
+                  <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:self-start text-xs">
                     <button
                       onClick={handleBlastMessage}
-                      className="px-3 py-2 bg-stone-950 border border-stone-850 rounded-lg text-white hover:text-white-shine text-[11px] flex items-center gap-1 font-mono cursor-pointer"
+                      className="px-3 py-2.5 bg-stone-950 border border-stone-850 rounded-lg text-white hover:text-white-shine text-[11px] flex items-center justify-center gap-1.5 font-mono cursor-pointer"
                       title="Salin pesan undangan digital untuk semua tamu digital (tamu cetak dilewati)"
                     >
-                      <Send size={12} />
+                      <Send size={13} />
                       <span>Blast</span>
                     </button>
 
                     <button
                       onClick={downloadGuestsCSV}
-                      className="px-3 py-2 bg-stone-950 border border-stone-850 rounded-lg text-white hover:text-white-shine text-[11px] flex items-center gap-1 font-mono cursor-pointer"
+                      className="px-3 py-2.5 bg-stone-950 border border-stone-850 rounded-lg text-white hover:text-white-shine text-[11px] flex items-center justify-center gap-1.5 font-mono cursor-pointer"
                       title="Unduh file Excel/CSV"
                     >
-                      <FileText size={12} />
+                      <FileText size={13} />
                       <span>Export</span>
                     </button>
                   </div>
@@ -1166,8 +1168,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                 )}
 
                 {/* Table View */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-white">
+                <div className="overflow-x-auto -mx-2 sm:mx-0 pb-2">
+                  <table className="w-full min-w-[760px] text-left text-xs text-white">
                     <thead>
                       <tr className="border-b border-stone-800 text-white uppercase tracking-wider font-mono text-[10px]">
                         {isDev && (
@@ -1186,7 +1188,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                         <th className="py-3 px-2">Kode / Link Undangan</th>
                         <th className="py-3 px-2">Rawuh? (Pax)</th>
                         <th className="py-3 px-2">Buka</th>
-                        <th className="py-3 px-2 text-center">Aksi Pengiriman WA / Admin</th>
+                        <th className="py-3 px-2 text-center">Aksi Admin</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-850">
@@ -1238,11 +1240,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                                 </div>
                               </div>
                             ) : (
-                              <div>
-                                <p className="font-bold text-white text-sm leading-tight">{g.name}</p>
-                                <span className="inline-block mt-1 px-2 py-px bg-stone-950 rounded text-[9px] font-mono text-white-gentle">
-                                  {g.category}
-                                </span>
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <p className="font-bold text-white text-sm leading-tight break-words">{g.name}</p>
+                                  <span className="inline-block mt-1 px-2 py-px bg-stone-950 rounded text-[9px] font-mono text-white-gentle">
+                                    {g.category}
+                                  </span>
+                                </div>
+                                {g.whatsapp ? (
+                                  <a
+                                    href={getWhatsAppLink(g)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="shrink-0 px-2.5 py-1.5 rounded bg-green-950 text-green-400 border border-green-800 flex items-center justify-center gap-1 hover:bg-green-900 transition-colors"
+                                    title={(g.invite_type || 'digital') === 'cetak'
+                                      ? 'Kirim manual ke tamu cetak (tidak ikut blast otomatis)'
+                                      : 'Buka WhatsApp Chat'}
+                                  >
+                                    <Smartphone size={12} />
+                                    <span className="text-[10px]">Kirim</span>
+                                  </a>
+                                ) : (
+                                  <span className="shrink-0 text-[10px] text-stone-600 px-1" title="Tidak ada nomor WhatsApp">-</span>
+                                )}
                               </div>
                             )}
                           </td>
@@ -1290,10 +1310,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                                         setCopiedId(g.id);
                                         setTimeout(() => setCopiedId(null), 1500);
                                       }}
-                                      className="text-[#000000] hover:text-white"
+                                      className="text-stone-400 hover:text-white p-0.5"
                                       title="Copy Link Undangan"
                                     >
-                                      {copiedId === g.id ? <Check size={11} className="text-green-500" /> : <Copy size={11} />}
+                                      {copiedId === g.id ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
                                     </button>
                                   </div>
                                   {isEditing ? (
@@ -1353,7 +1373,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                               </td>
 
                               <td className="py-3 px-2">
-                                <div className="flex items-center justify-center gap-2">
+                                <div className="flex flex-wrap items-center justify-center gap-1.5 min-w-[170px]">
                                   {isEditing ? (
                                     <>
                                       <button
@@ -1371,37 +1391,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                                     </>
                                   ) : (
                                     <>
-                                      {/* WhatsApp Launcher templates */}
-                                      {g.whatsapp ? (
-                                        <a
-                                          href={getWhatsAppLink(g)}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="p-1 px-2.5 rounded bg-green-950 text-green-400 border border-green-800 flex items-center justify-center gap-1 hover:bg-green-900 transition-colors"
-                                          title={(g.invite_type || 'digital') === 'cetak'
-                                            ? 'Kirim manual ke tamu cetak (tidak ikut blast otomatis)'
-                                            : 'Buka WhatsApp Chat'}
-                                        >
-                                          <Smartphone size={11} />
-                                          <span className="text-[10px]">Kirim</span>
-                                        </a>
-                                      ) : (
-                                        <span className="text-[10px] text-stone-600 block">-</span>
-                                      )}
-
                                       {/* WA Message layout text only copier */}
                                       <button
                                         onClick={() => handleCopyWaMessage(g)}
-                                        className="p-1 px-2 bg-stone-950 text-white hover:bg-stone-800 border border-stone-850 rounded"
+                                        className="p-1.5 bg-stone-950 text-white hover:bg-stone-800 border border-stone-850 rounded"
                                         title="Copy Template Pesan"
                                       >
-                                        {copiedWaId === g.id ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
+                                        {copiedWaId === g.id ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
                                       </button>
 
                                       {/* Enable / Disable Active check togglers */}
                                       <button
                                         onClick={() => toggleGuestActive(g)}
-                                        className={`p-1 border rounded text-[10px] ${g.status_active === 1 ? 'border-amber-800 text-white-gentle' : 'border-stone-800 text-stone-600'}`}
+                                        className={`px-2 py-1.5 border rounded text-[10px] ${g.status_active === 1 ? 'border-amber-800 text-white-gentle' : 'border-stone-800 text-stone-500'}`}
                                         title={g.status_active === 1 ? 'Matikan Akses Undangan' : 'Aktifkan Akses'}
                                       >
                                         {g.status_active === 1 ? 'Aktif' : 'Off'}
@@ -1410,19 +1412,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                                       {/* Inline edit */}
                                       <button
                                         onClick={() => { setEditingGuestId(g.id); setEditGuestForm(g); }}
-                                        className="p-1 text-stone-450 hover:text-white"
+                                        className="p-1.5 text-stone-300 hover:text-white"
                                         title="Edit Tamu"
                                       >
-                                        <Edit size={12} />
+                                        <Edit size={13} />
                                       </button>
 
                                       {/* Delete */}
                                       <button
                                         onClick={() => handleDeleteGuest(g.id, g.name)}
-                                        className="p-1 text-red-500 hover:text-red-300 cursor-pointer"
+                                        className="p-1.5 text-red-500 hover:text-red-300 cursor-pointer"
                                         title="Hapus"
                                       >
-                                        <Trash2 size={12} />
+                                        <Trash2 size={13} />
                                       </button>
                                     </>
                                   )}
@@ -1553,11 +1555,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
 
             {/* BULK GUESTS MODAL */}
             {showBulkModal && (
-              <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[1001]">
-                <div className="bg-stone-900 border border-stone-800 rounded-3xl p-6 md:p-8 max-w-xl w-full text-left relative shadow-2xl">
+              <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-2 sm:p-4 z-[1001]">
+                <div className="bg-stone-900 border border-stone-800 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 md:p-8 max-w-xl w-full text-left relative shadow-2xl max-h-[92vh] overflow-y-auto">
                   <button
                     onClick={() => setShowBulkModal(false)}
-                    className="absolute top-4 right-4 text-white hover:text-white font-bold text-2xl cursor-pointer"
+                    className="absolute top-3 right-3 sm:top-4 sm:right-4 w-9 h-9 flex items-center justify-center rounded-full bg-stone-800/80 text-white hover:text-white font-bold text-xl cursor-pointer"
                   >
                     ×
                   </button>
@@ -1965,14 +1967,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
 
         {/* TAB 4.3: COMMENTS MODERATION (BUKU TAMU APPROVE LIST) */}
         {activeTab === 'comments' && (
-          <div className="bg-stone-900 border border-stone-800 rounded-2xl p-6 shadow">
+          <div className="bg-stone-900 border border-stone-800 rounded-2xl p-4 sm:p-6 shadow">
             <h3 className="font-serif text-lg font-bold text-white-gentle tracking-wide mb-2">Moderasi Buku Tamu (Ucapan Pengunjung)</h3>
             <p className="text-xs text-white mb-6 font-sans leading-normal">
               Gunakan panel ini untuk mengawasi ucapan doa dan restu yang ditulis oleh para tamu. Anda bebas menyembunyikan tulisan spans/spam atau menghapus komentar secara permanen.
             </p>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left text-white">
+            <div className="overflow-x-auto -mx-2 sm:mx-0 pb-2">
+              <table className="w-full min-w-[640px] text-xs text-left text-white">
                 <thead>
                   <tr className="border-b border-stone-800 text-white font-mono uppercase text-[10px]">
                     <th className="py-3 px-2">Nama Tamu & Code</th>
@@ -2068,11 +2070,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
 
         {/* IMAGE PICKER MODAL */}
         {showImagePicker && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[1002]">
-            <div className="bg-stone-900 border border-stone-800 rounded-3xl p-6 md:p-8 max-w-3xl w-full text-left relative shadow-2xl max-h-[90vh] flex flex-col">
+          <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center p-2 sm:p-4 z-[1002]">
+            <div className="bg-stone-900 border border-stone-800 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 md:p-8 max-w-3xl w-full text-left relative shadow-2xl max-h-[92vh] flex flex-col">
               <button
                 onClick={() => { setShowImagePicker(false); setImagePickerTarget(null); }}
-                className="absolute top-4 right-4 text-white hover:text-white font-bold text-2xl cursor-pointer"
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 w-9 h-9 flex items-center justify-center rounded-full bg-stone-800/80 text-white hover:text-white font-bold text-xl cursor-pointer z-10"
               >
                 ×
               </button>
