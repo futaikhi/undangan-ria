@@ -155,8 +155,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [copiedWaId, setCopiedWaId] = useState<number | null>(null);
 
-  // Batch ticket generation (local/dev only)
-  const isDev = import.meta.env.DEV;
+  // Batch ticket generation
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
   const [batchProgress, setBatchProgress] = useState<BatchProgress | null>(null);
@@ -1119,70 +1118,66 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                   </div>
                 </div>
 
-                {/* Batch ticket generation bar (dev/local only) */}
-                {isDev && (
-                  <div className="border-b border-stone-850 pb-4 mb-4">
-                    <div className="flex items-center justify-between gap-3 flex-wrap">
-                      <div className="flex items-center gap-2 text-xs">
-                        <QrCode size={14} className="text-gold-gentle" />
-                        <span className="text-white-gentle font-mono">
-                          {selectedIds.size > 0 ? `${selectedIds.size} tamu dipilih` : 'Pilih tamu untuk generate tiket'}
-                        </span>
-                        {selectedIds.size > 0 && !isGeneratingBatch && (
-                          <button onClick={clearSelection} className="text-stone-500 hover:text-white text-[10px] underline cursor-pointer">
-                            Reset
-                          </button>
-                        )}
-                      </div>
-                      <button
-                        onClick={handleBatchDownload}
-                        disabled={selectedIds.size === 0 || isGeneratingBatch}
-                        className="px-4 py-2 bg-batik-brown hover:bg-amber-800 text-white border border-gold-gentle rounded-lg text-[11px] uppercase font-semibold tracking-widest flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {isGeneratingBatch ? <RefreshCw size={12} className="animate-spin" /> : <Download size={12} />}
-                        <span>{isGeneratingBatch ? 'Memproses...' : 'Generate Tiket ZIP'}</span>
-                      </button>
+                {/* Batch ticket generation bar */}
+                <div className="border-b border-stone-850 pb-4 mb-4">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-2 text-xs">
+                      <QrCode size={14} className="text-gold-gentle" />
+                      <span className="text-white-gentle font-mono">
+                        {selectedIds.size > 0 ? `${selectedIds.size} tamu dipilih` : 'Pilih tamu untuk generate tiket'}
+                      </span>
+                      {selectedIds.size > 0 && !isGeneratingBatch && (
+                        <button onClick={clearSelection} className="text-stone-500 hover:text-white text-[10px] underline cursor-pointer">
+                          Reset
+                        </button>
+                      )}
                     </div>
-                    {isGeneratingBatch && batchProgress && (
-                      <div className="mt-2 flex items-center gap-2 text-[10px] text-stone-500 font-mono">
-                        <div className="flex-1 bg-stone-950 rounded-full h-1.5 overflow-hidden">
-                          <div
-                            className="bg-gold-gentle h-full transition-all"
-                            style={{ width: `${batchProgress.total > 0 ? (batchProgress.done / batchProgress.total) * 100 : 0}%` }}
-                          />
-                        </div>
-                        <span className="whitespace-nowrap">{batchProgress.done}/{batchProgress.total} — {batchProgress.currentName}</span>
-                      </div>
-                    )}
-                    {batchResult && !isGeneratingBatch && (
-                      <div className={`mt-2 text-[10px] font-mono leading-relaxed ${batchResult.count > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {batchResult.count > 0 && `${batchResult.count} tiket berhasil dibuat dan diunduh sebagai ZIP. `}
-                        {batchResult.errors.length > 0 && (
-                          <span className="text-amber-400">
-                            {batchResult.errors.length} gagal: {batchResult.errors.map(e => `${e.code} (${e.error})`).join(', ')}
-                          </span>
-                        )}
-                      </div>
-                    )}
+                    <button
+                      onClick={handleBatchDownload}
+                      disabled={selectedIds.size === 0 || isGeneratingBatch}
+                      className="px-4 py-2 bg-batik-brown hover:bg-amber-800 text-white border border-gold-gentle rounded-lg text-[11px] uppercase font-semibold tracking-widest flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isGeneratingBatch ? <RefreshCw size={12} className="animate-spin" /> : <Download size={12} />}
+                      <span>{isGeneratingBatch ? 'Memproses...' : 'Generate Tiket ZIP'}</span>
+                    </button>
                   </div>
-                )}
+                  {isGeneratingBatch && batchProgress && (
+                    <div className="mt-2 flex items-center gap-2 text-[10px] text-stone-500 font-mono">
+                      <div className="flex-1 bg-stone-950 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="bg-gold-gentle h-full transition-all"
+                          style={{ width: `${batchProgress.total > 0 ? (batchProgress.done / batchProgress.total) * 100 : 0}%` }}
+                        />
+                      </div>
+                      <span className="whitespace-nowrap">{batchProgress.done}/{batchProgress.total} — {batchProgress.currentName}</span>
+                    </div>
+                  )}
+                  {batchResult && !isGeneratingBatch && (
+                    <div className={`mt-2 text-[10px] font-mono leading-relaxed ${batchResult.count > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {batchResult.count > 0 && `${batchResult.count} tiket berhasil dibuat dan diunduh sebagai ZIP. `}
+                      {batchResult.errors.length > 0 && (
+                        <span className="text-amber-400">
+                          {batchResult.errors.length} gagal: {batchResult.errors.map(e => `${e.code} (${e.error})`).join(', ')}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {/* Table View */}
                 <div className="overflow-x-auto -mx-2 sm:mx-0 pb-2">
                   <table className="w-full min-w-[760px] text-left text-xs text-white">
                     <thead>
                       <tr className="border-b border-stone-800 text-white uppercase tracking-wider font-mono text-[10px]">
-                        {isDev && (
-                          <th className="py-3 px-2 w-8">
-                            <input
-                              type="checkbox"
-                              checked={selectedIds.size > 0 && selectedIds.size === filteredGuests.filter(g => g.category !== OTHER_CATEGORY).length}
-                              onChange={toggleSelectAll}
-                              className="accent-amber-600 cursor-pointer w-3.5 h-3.5"
-                              title="Pilih semua tamu"
-                            />
-                          </th>
-                        )}
+                        <th className="py-3 px-2 w-8">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.size > 0 && selectedIds.size === filteredGuests.filter(g => g.category !== OTHER_CATEGORY).length}
+                            onChange={toggleSelectAll}
+                            className="accent-amber-600 cursor-pointer w-3.5 h-3.5"
+                            title="Pilih semua tamu"
+                          />
+                        </th>
                         <th className="py-3 px-2">Tamu & Kategori</th>
                         <th className="py-3 px-2">Undangan</th>
                         <th className="py-3 px-2">Kode / Link Undangan</th>
@@ -1194,7 +1189,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                     <tbody className="divide-y divide-stone-850">
                       {filteredGuests.length === 0 ? (
                         <tr>
-                          <td colSpan={isDev ? 7 : 6} className="py-8 text-center text-stone-500 font-mono">
+                          <td colSpan={7} className="py-8 text-center text-stone-500 font-mono">
                             Tidak ditemukan tamu undangan yang sesuai
                           </td>
                         </tr>
@@ -1205,18 +1200,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
 
                           return (
                             <tr key={g.id} className="hover:bg-stone-850/30 transition-colors">
-                              {isDev && (
-                                <td className="py-3 px-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedIds.has(g.id)}
-                                    onChange={() => toggleSelect(g.id)}
-                                    disabled={g.category === OTHER_CATEGORY}
-                                    className="accent-amber-600 cursor-pointer w-3.5 h-3.5 disabled:opacity-30 disabled:cursor-not-allowed"
-                                    title={g.category === OTHER_CATEGORY ? 'Kategori Other tidak generate tiket' : 'Pilih untuk generate tiket'}
-                                  />
-                                </td>
-                              )}
+                              <td className="py-3 px-2">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedIds.has(g.id)}
+                                  onChange={() => toggleSelect(g.id)}
+                                  disabled={g.category === OTHER_CATEGORY}
+                                  className="accent-amber-600 cursor-pointer w-3.5 h-3.5 disabled:opacity-30 disabled:cursor-not-allowed"
+                                  title={g.category === OTHER_CATEGORY ? 'Kategori Other tidak generate tiket' : 'Pilih untuk generate tiket'}
+                                />
+                              </td>
                           <td className="py-3 px-2 max-w-xs">
                             {isEditing ? (
                               <div className="space-y-1">
